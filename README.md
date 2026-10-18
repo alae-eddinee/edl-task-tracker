@@ -6,9 +6,9 @@
 
 **Real-time task management for teams, built with Next.js and Supabase.**
 
-[![Demo](docs/demo/demo-preview.gif)](docs/demo/demo.mp4)
+[![Demo](docs/demo/demo-preview.gif)](https://alae-eddinee.github.io/edl-task-tracker/)
 
-▶ **[Watch the full demo with sound (56 s)](docs/demo/demo.mp4)**
+▶ **[Watch the full demo with sound (56 s)](https://alae-eddinee.github.io/edl-task-tracker/)**
 
 <sub>The demo uses made-up people and tasks.</sub>
 

@@ -1,0 +1,30 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>EDL &amp; Task Tracker — Demo</title>
+<meta name="description" content="Demo of EDL & Task Tracker, a real-time team task manager built with Next.js and Supabase.">
+<link rel="icon" href="logo-mark.svg">
+<style>
+  :root { --bg: #121318; --fg: #f3f4f6; --muted: #a3a7af; --accent: #ff6b6e; }
+  * { box-sizing: border-box; margin: 0; }
+  body { min-height: 100vh; background: radial-gradient(1200px 700px at 50% 30%, #2b2e36, var(--bg) 70%); color: var(--fg);
+         font-family: Inter, "Segoe UI", system-ui, sans-serif; display: flex; flex-direction: column; align-items: center; padding: 48px 16px; }
+  header { display: flex; align-items: center; gap: 14px; margin-bottom: 8px; }
+  header img { width: 44px; height: 44px; }
+  h1 { font-size: clamp(26px, 4vw, 40px); letter-spacing: -.02em; }
+  p { color: var(--muted); margin-bottom: 28px; text-align: center; }
+  video { width: min(1200px, 100%); border-radius: 14px; box-shadow: 0 40px 100px rgba(0,0,0,.55), 0 0 0 1px rgba(255,255,255,.08); background: #000; }
+  a.btn { margin-top: 28px; display: inline-flex; gap: 8px; align-items: center; padding: 12px 22px; border-radius: 999px; color: #fff; text-decoration: none;
+          background: rgba(255,255,255,.08); border: 1px solid rgba(255,255,255,.16); font-weight: 600; }
+  a.btn:hover { background: rgba(255,255,255,.14); }
+</style>
+</head>
+<body>
+  <header><img src="logo-mark.svg" alt=""><h1>EDL &amp; Task Tracker</h1></header>
+  <p>Real-time task management for teams, built with Next.js &amp; Supabase. Turn your sound on 🔊</p>
+  <video src="demo/demo.mp4" poster="demo/poster.jpg" controls playsinline preload="metadata"></video>
+  <a class="btn" href="https://github.com/alae-eddinee/edl-task-tracker">View the code on GitHub →</a>
+</body>
+</html>
