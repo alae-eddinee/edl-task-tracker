@@ -1,0 +1,743 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>EDL &amp; Task Tracker — Demo</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+:root{
+  --primary:#454954; --primary-hover:#33363f; --brand-red:#e22125;
+  --success:#448361; --danger:#b42318; --warning:#cb912f; --info:#337ea9;
+  --bg:#fff; --bg2:#fbfbfa; --bg3:#f1f1ef; --bga:#eef0f3;
+  --fg:#2f333a; --fg2:#555a64; --fg3:#737884; --fgm:#a3a7af;
+  --border:#e8e9ec; --border-h:#d2d4da;
+  --pop: rgba(15,15,15,.05) 0 0 0 1px, rgba(15,15,15,.1) 0 3px 6px, rgba(15,15,15,.2) 0 9px 24px;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{width:1920px;height:1080px;overflow:hidden;background:#121318}
+body{font-family:Inter,"Segoe UI",system-ui,sans-serif;-webkit-font-smoothing:antialiased;font-feature-settings:"cv11"}
+#stage{position:absolute;inset:0;overflow:hidden;
+  background:radial-gradient(1200px 800px at 50% 45%, #2b2e36 0%, #1a1c22 55%, #0f1014 100%)}
+.glow{position:absolute;border-radius:50%;filter:blur(90px);pointer-events:none}
+#floorWrap{position:absolute;left:0;right:0;bottom:-120px;height:700px;perspective:700px;perspective-origin:50% 0%;pointer-events:none}
+#floor{position:absolute;left:-60%;right:-60%;top:0;height:1600px;transform-origin:50% 0;transform:rotateX(76deg);
+  background-image:linear-gradient(rgba(255,255,255,.07) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.07) 1px,transparent 1px);
+  background-size:80px 80px;
+  -webkit-mask-image:linear-gradient(to bottom,transparent 0%,#000 25%,#000 55%,transparent 100%)}
+.pt{position:absolute;width:4px;height:4px;border-radius:50%;background:#fff}
+.scene{position:absolute;inset:0;perspective:2200px;transform-style:preserve-3d;display:none}
+.c3{position:absolute;left:50%;top:50%;transform-style:preserve-3d;will-change:transform}
+svg.i{width:1em;height:1em;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;flex-shrink:0;display:inline-block;vertical-align:-0.125em}
+
+/* ---------- Captions ---------- */
+#cap{position:absolute;left:0;right:0;bottom:46px;display:flex;justify-content:center;pointer-events:none;z-index:50}
+#capInner{display:flex;align-items:center;gap:18px;padding:16px 28px 16px 18px;border-radius:18px;
+  background:rgba(20,21,26,.72);backdrop-filter:blur(14px);border:1px solid rgba(255,255,255,.1);
+  box-shadow:0 20px 60px rgba(0,0,0,.45)}
+#capIcon{width:46px;height:46px;border-radius:12px;background:var(--brand-red);display:flex;align-items:center;justify-content:center;color:#fff;font-size:24px}
+#capK{font-size:14px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:#ff6b6e}
+#capT{font-size:30px;font-weight:700;color:#fff;letter-spacing:-.01em;margin-top:2px}
+
+/* ---------- Intro / Outro ---------- */
+.bigTitle{font-size:96px;font-weight:800;color:#fff;letter-spacing:-.035em;white-space:nowrap}
+.bigTitle span{display:inline-block}
+.tag{font-size:30px;color:#b9bdc6;font-weight:500;white-space:nowrap;text-align:center}
+.miniCard{position:absolute;width:300px;padding:16px 18px;border-radius:14px;background:#fff;box-shadow:0 30px 60px rgba(0,0,0,.45);border:1px solid var(--border)}
+.miniCard .t{font-size:16px;font-weight:600;color:var(--fg);margin-bottom:10px}
+.chip{display:inline-flex;align-items:center;gap:10px;padding:12px 20px;border-radius:999px;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.14);color:#fff;font-size:22px;font-weight:600;white-space:nowrap}
+.chip b{width:10px;height:10px;border-radius:50%}
+
+/* ---------- App primitives ---------- */
+.app{font-size:14px;color:var(--fg);background:var(--bg2);text-align:left}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;border-radius:8px;font-weight:500;font-size:14px;padding:8px 16px;background:var(--primary);color:#fff;white-space:nowrap}
+.btn.sm{padding:6px 12px;font-size:13px}
+.btn.danger{background:var(--danger)}
+.btn.ghost{background:transparent;color:var(--fg2)}
+.btn.icon{padding:8px}
+.btn.icon.danger{background:#fbe9e5;color:var(--danger)}
+.badge{display:inline-flex;align-items:center;padding:2px 8px;font-size:12px;font-weight:500;border-radius:6px;box-shadow:inset 0 0 0 1px rgba(69,73,84,.2);background:var(--bga);color:var(--primary)}
+.badge.danger{background:#fbe9e5;color:var(--danger);box-shadow:inset 0 0 0 1px rgba(180,35,24,.2)}
+.badge.secondary{background:var(--bg3);color:var(--fg2);box-shadow:inset 0 0 0 1px rgba(210,212,218,.6)}
+.av{border-radius:50%;background:#454954;color:#fff;display:inline-flex;align-items:center;justify-content:center;font-weight:500;flex-shrink:0}
+.pill{display:inline-flex;align-items:center;gap:6px;border-radius:999px;font-weight:500;white-space:nowrap;padding:2px 10px;font-size:12px}
+.pill .d{width:8px;height:8px;border-radius:50%}
+.st-todo{background:#f1f1ef;color:#5f5e5b}.st-todo .d{background:#a3a7af}
+.st-in_progress{background:#e7f3f8;color:#28456c}.st-in_progress .d{background:#337ea9}
+.st-done{background:#edf3ec;color:#1c3829}.st-done .d{background:#448361}
+.pill.inv{background:rgba(255,255,255,.2);color:#fff;box-shadow:inset 0 0 0 1px rgba(255,255,255,.4)}
+.pill.inv .d{box-shadow:0 0 0 1px rgba(255,255,255,.7)}
+.card{background:#fff;border:1px solid var(--border);border-radius:8px}
+.lbl{display:block;font-size:14px;font-weight:500;color:var(--fg2);margin-bottom:6px}
+.inp{width:100%;padding:8px 12px;background:#fff;border:1px solid var(--border);border-radius:8px;color:var(--fg);font-size:14px;min-height:38px;display:flex;align-items:center;gap:8px;position:relative}
+.inp.focus{box-shadow:0 0 0 2px var(--primary);border-color:transparent}
+.ph{color:var(--fgm)}
+.caret{display:inline-block;width:2px;height:1.1em;background:var(--fg);vertical-align:-0.18em;margin-left:1px}
+.tagS{display:inline-flex;align-items:center;gap:2px;margin-left:8px;padding:2px 6px;border-radius:4px;font-size:12px;font-weight:500;vertical-align:2px}
+.tag-rec{background:rgba(69,73,84,.1);color:var(--primary)}
+.tag-self{background:rgba(20,184,166,.1);color:#0f766e}
+.cb{width:16px;height:16px;border-radius:4px;border:1px solid var(--border-h);background:#fff;display:inline-flex;align-items:center;justify-content:center;color:#fff;font-size:11px}
+.cb.on{background:var(--danger);border-color:var(--danger)}
+.cb.onp{background:var(--primary);border-color:var(--primary)}
+
+/* Browser window */
+.win{width:1440px;height:880px;border-radius:14px;overflow:hidden;background:#fff;
+  box-shadow:0 60px 120px rgba(0,0,0,.55),0 0 0 1px rgba(255,255,255,.08)}
+.chrome{height:40px;background:#e9eaed;display:flex;align-items:center;padding:0 16px;gap:8px;border-bottom:1px solid #d9dbe0}
+.chrome i{width:12px;height:12px;border-radius:50%;display:block}
+.url{margin-left:24px;flex:0 0 520px;height:26px;border-radius:7px;background:#fff;color:#6b7080;font-size:13px;display:flex;align-items:center;padding:0 12px;gap:8px}
+.hdr{height:64px;background:rgba(255,255,255,.9);border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;padding:0 48px}
+.hdr h1{font-size:20px;font-weight:600}
+.main{padding:28px 48px 0}
+.grid-rows{display:grid;grid-template-columns:30% 17% 14% 10% 11% 18%}
+.th{padding:12px 16px;font-size:12px;font-weight:600;color:var(--fg2);text-transform:uppercase;background:var(--bg3);border-bottom:1px solid var(--border)}
+.tr{border-bottom:1px solid var(--border);overflow:hidden}
+.td{padding:12px 16px;display:flex;align-items:center;font-size:14px;color:var(--fg2)}
+.tr.bombe{background:#fef2f2}
+.tr.bombe .tt{color:#dc2626;font-weight:700}
+.tr.bombe .sub{color:#111827;font-weight:700}
+.tr.done{opacity:.5;background:#f9fafb}
+.tr.done .tt,.tr.done .td{text-decoration:line-through;color:#9ca3af}
+.tt{font-weight:500;font-size:15px;color:var(--fg)}
+.sub{font-size:12px;color:var(--fg3);margin-top:2px}
+.stat{padding:16px}
+.stat .k{display:flex;justify-content:space-between;font-size:14px;color:var(--fg3)}
+.stat .v{margin-top:6px;font-size:28px;line-height:1;font-weight:600;letter-spacing:-.02em;font-variant-numeric:tabular-nums}
+.tabs{display:flex;gap:4px;border-bottom:1px solid var(--border);margin-bottom:22px}
+.tab{display:flex;align-items:center;gap:8px;padding:8px 16px;margin-bottom:-1px;border-bottom:2px solid transparent;font-size:14px;font-weight:500;color:var(--fg2)}
+.tab.on{border-color:var(--primary);color:var(--primary)}
+.cnt{min-width:20px;padding:1px 6px;border-radius:999px;background:var(--danger);color:#fff;font-size:12px;font-weight:700;text-align:center}
+
+/* toast */
+.toast{position:absolute;width:380px;border-radius:8px;background:#fff;border:1px solid var(--border);box-shadow:0 8px 32px rgba(0,0,0,.16);overflow:hidden;padding:16px}
+.toast .ic{width:36px;height:36px;border-radius:6px;display:flex;align-items:center;justify-content:center;color:#fff;font-size:20px}
+.toast .bar{position:absolute;left:0;bottom:0;height:4px;background:rgba(69,73,84,.6)}
+
+/* modal */
+.backdrop{position:absolute;inset:0;background:rgba(0,0,0,.5)}
+.modal{position:absolute;left:50%;top:50%;width:672px;background:#fff;border-radius:12px;box-shadow:var(--pop)}
+.modal .mh{display:flex;justify-content:space-between;align-items:center;padding:16px 24px;border-bottom:1px solid var(--border)}
+.modal .mh h2{font-size:18px;font-weight:600}
+.modal .mb{padding:20px 24px;display:flex;flex-direction:column;gap:16px}
+.dd{position:absolute;left:0;right:0;top:100%;margin-top:4px;background:#fff;border:1px solid var(--border);border-radius:8px;box-shadow:0 10px 15px -3px rgba(0,0,0,.1);z-index:5;overflow:hidden}
+.dd .o{padding:8px 12px;display:flex;align-items:center;gap:8px;font-size:14px}
+.dd .o.sel{background:rgba(69,73,84,.1);color:var(--primary);font-weight:500}
+
+/* phone */
+.phone{width:400px;height:820px;border-radius:58px;background:#0b0c0f;padding:14px;box-shadow:0 60px 120px rgba(0,0,0,.6),inset 0 0 0 2px #2a2c33,0 0 0 1px rgba(255,255,255,.12)}
+.screen{width:100%;height:100%;border-radius:46px;overflow:hidden;background:var(--bg2);position:relative}
+.notch{position:absolute;top:10px;left:50%;margin-left:-60px;width:120px;height:32px;border-radius:20px;background:#0b0c0f;z-index:10}
+.pcard{padding:12px;border-bottom:1px solid var(--border);background:#fff}
+.pcard.bombe{background:#dc2626}
+.pcard.bombe .pt1{color:#fff}
+.pcard.bombe .ps{color:#fff;font-weight:700}
+.pt1{font-size:14px;font-weight:500;line-height:1.25;color:var(--fg)}
+.ps{font-size:12px;color:var(--fg3);margin-top:2px}
+.duec{margin-left:auto;font-size:12px;padding:4px 8px;border-radius:4px;background:#f3f4f6;color:#4b5563}
+.menu{position:absolute;width:180px;background:#fff;border-radius:8px;box-shadow:var(--pop);padding:4px;z-index:20}
+.menu .o{display:flex;align-items:center;gap:8px;padding:6px 8px;border-radius:6px;font-size:14px}
+.menu .o.hl{background:rgba(69,73,84,.07)}
+
+/* exploded */
+.layer{position:absolute;transform-style:preserve-3d;border-radius:14px;background:#fff;box-shadow:0 0 0 1px rgba(0,0,0,.06),0 40px 80px rgba(0,0,0,.35)}
+.llabel{position:absolute;transform-style:preserve-3d;white-space:nowrap}
+.llabel .in{display:flex;align-items:center;gap:12px;padding:12px 18px;border-radius:12px;background:rgba(20,21,26,.82);border:1px solid rgba(255,255,255,.14);color:#fff;font-size:22px;font-weight:600;box-shadow:0 20px 40px rgba(0,0,0,.4)}
+.llabel .in .n{width:30px;height:30px;border-radius:8px;background:var(--brand-red);display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:800}
+
+/* admin */
+.feat{display:flex;align-items:center;gap:18px;color:#fff;font-size:28px;font-weight:600;margin-bottom:26px;white-space:nowrap}
+.feat .ic{width:56px;height:56px;border-radius:14px;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.14);display:flex;align-items:center;justify-content:center;font-size:26px;color:#ff6b6e}
+
+#cursor{position:absolute;left:0;top:0;width:34px;height:34px;z-index:60;pointer-events:none;filter:drop-shadow(0 4px 8px rgba(0,0,0,.4))}
+.ripple{position:absolute;width:60px;height:60px;margin:-30px 0 0 -30px;border-radius:50%;border:3px solid rgba(255,255,255,.9);z-index:59;pointer-events:none}
+.tap{position:absolute;width:44px;height:44px;margin:-22px 0 0 -22px;border-radius:50%;background:rgba(255,255,255,.55);border:2px solid #fff;z-index:59;box-shadow:0 0 20px rgba(255,255,255,.6)}
+#flow{position:absolute;inset:0;z-index:40;pointer-events:none}
+#fade{position:absolute;inset:0;background:#0f1014;z-index:100;pointer-events:none}
+</style>
+</head>
+<body>
+<div id="stage">
+  <div class="glow" id="g1" style="width:900px;height:900px;left:1150px;top:-350px;background:rgba(226,33,37,.22)"></div>
+  <div class="glow" id="g2" style="width:1000px;height:1000px;left:-400px;top:420px;background:rgba(80,110,170,.18)"></div>
+  <div id="floorWrap"><div id="floor"></div></div>
+  <div id="pts"></div>
+
+  <!-- ============ INTRO ============ -->
+  <div class="scene" id="sIntro">
+    <div class="c3" id="introRig">
+      <div id="orbit" class="c3"></div>
+      <div class="c3" id="introLogo" style="width:150px;height:150px;margin:-250px 0 0 -75px">
+        <img src="../../public/brand/logo-mark.svg" style="width:150px;height:150px;filter:drop-shadow(0 20px 40px rgba(0,0,0,.5))">
+      </div>
+      <div class="c3" id="introTitle" style="width:1200px;margin:-40px 0 0 -600px;text-align:center"><div class="bigTitle" id="titleLetters"></div></div>
+      <div class="c3" id="introTag" style="width:1200px;margin:90px 0 0 -600px"><div class="tag">Real-time task management for teams — built with Next.js &amp; Supabase</div></div>
+    </div>
+  </div>
+
+  <!-- ============ LOGIN ============ -->
+  <div class="scene" id="sLogin">
+    <div class="c3" id="loginCard" style="width:448px;margin:-300px 0 0 -224px">
+      <div class="card app" style="padding:24px;background:#fff;box-shadow:0 60px 120px rgba(0,0,0,.55)">
+        <div style="text-align:center;margin-bottom:24px">
+          <img src="../../public/brand/logo-mark.svg" style="width:56px;height:56px;margin:0 auto 20px;display:block">
+          <div style="font-size:20px;font-weight:600">EDL &amp; Task Tracker</div>
+          <div style="color:var(--fg2);margin-top:8px;font-size:15px">Sign in to your account</div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:16px">
+          <div><span class="lbl">Email or name</span><div class="inp" id="lgUser"></div></div>
+          <div><span class="lbl">Password</span><div class="inp" id="lgPass" style="justify-content:space-between"><span id="lgPassT"></span><span style="color:var(--fg3);font-size:20px" data-i="eye"></span></div></div>
+          <label style="display:flex;align-items:center;gap:8px"><span class="cb onp" id="lgRem">✓</span><span style="font-size:14px;color:var(--fg2)">Remember me on this device</span></label>
+          <div class="btn" id="lgBtn" style="width:100%;padding:10px 16px;font-size:15px">Login</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ APP (manager window + phone) ============ -->
+  <div class="scene" id="sApp">
+    <div class="c3" id="win" style="margin:-440px 0 0 -720px">
+      <div class="win app" style="position:relative">
+        <div class="chrome"><i style="background:#ff5f57"></i><i style="background:#febc2e"></i><i style="background:#28c840"></i>
+          <div class="url"><span data-i="shield" style="font-size:12px"></span>task-tracker.app/manager</div></div>
+        <div class="hdr">
+          <div style="display:flex;align-items:center;gap:10px"><img src="../../public/brand/logo-mark.svg" style="width:28px;height:28px"><h1>EDL &amp; Task Tracker</h1></div>
+          <div style="display:flex;align-items:center;gap:16px">
+            <div style="display:flex;align-items:center;gap:12px">
+              <span class="av" style="width:36px;height:36px;font-size:14px">SM</span>
+              <span><span style="display:block;font-size:14px;font-weight:500">Sarah Martin</span><span style="display:block;font-size:12px;color:var(--fg3)">sarah@demo.team</span></span>
+              <span style="color:var(--fg3);font-size:14px" data-i="chevron"></span>
+              <span class="badge">Manager</span>
+            </div>
+            <span style="position:relative;padding:8px;color:var(--fg2);font-size:20px"><span data-i="bell"></span>
+              <span id="bellN" style="position:absolute;top:-2px;right:-2px;min-width:18px;height:18px;padding:0 4px;border-radius:9px;background:var(--danger);color:#fff;font-size:10px;font-weight:700;display:flex;align-items:center;justify-content:center">2</span></span>
+            <span class="btn danger sm"><span data-i="logout"></span>Logout</span>
+          </div>
+        </div>
+        <div class="main">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:24px">
+            <div><div style="font-size:24px;font-weight:700">Manager Dashboard</div><div style="color:var(--fg2);font-size:15px">Manage and track your team's tasks</div></div>
+            <span class="btn" id="createBtn"><span data-i="plus"></span>Create Task</span>
+          </div>
+          <div class="tabs"><span class="tab on"><span data-i="clipboard"></span>Tasks</span><span class="tab"><span data-i="bell"></span>Inbox <span class="cnt" id="tabN">2</span></span></div>
+          <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:24px" id="stats"></div>
+          <div class="card" style="overflow:hidden">
+            <div class="grid-rows"><div class="th">Task</div><div class="th">Assigned</div><div class="th" style="text-align:center">Status</div><div class="th" style="text-align:center">Due</div><div class="th" style="text-align:center">Days ago</div><div class="th" style="text-align:right">Actions</div></div>
+            <div id="rows"></div>
+          </div>
+        </div>
+        <!-- toasts -->
+        <div class="toast" id="toast1" style="right:24px;top:116px"></div>
+        <div class="toast" id="toast2" style="right:24px;top:300px"></div>
+        <!-- modal -->
+        <div class="backdrop" id="backdrop"></div>
+        <div class="modal" id="modal">
+          <div class="mh"><h2>Create New Task</h2><span style="color:var(--fg3);font-size:20px" data-i="x"></span></div>
+          <div class="mb">
+            <div><span class="lbl">Task Title</span><div class="inp" id="mTitle"></div></div>
+            <div><span class="lbl">Description</span><div class="inp" id="mDesc" style="min-height:72px;align-items:flex-start"></div></div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
+              <div><span class="lbl">Priority</span><label style="display:flex;align-items:center;gap:8px;margin-top:10px"><span class="cb" id="mBombe"></span><span style="font-size:14px">🚨 BOMBE (Urgent)</span></label></div>
+              <div><span class="lbl">Due Date</span><div class="inp" id="mDue"><span style="color:var(--fg3)" data-i="calendar"></span><span id="mDueT" class="ph">Pick a date</span></div></div>
+            </div>
+            <div><span class="lbl">Assign to Employee</span>
+              <div class="inp" id="mAssign"><span style="color:var(--fgm)" data-i="search"></span><span id="mAssignT"></span>
+                <div class="dd" id="mDD">
+                  <div class="o sel" id="mDDo"><span class="av" style="width:24px;height:24px;font-size:12px">YA</span>Youssef Amrani</div>
+                </div>
+              </div>
+              <div id="mSel" style="margin-top:4px;font-size:12px;color:#16a34a;font-weight:500">✓ Youssef Amrani selected</div>
+            </div>
+            <div style="border:1px solid var(--border);border-radius:8px;padding:12px 14px">
+              <label style="display:flex;align-items:center;gap:10px"><span class="cb" id="mRec"></span><span data-i="repeat" style="color:var(--primary)"></span><span style="font-size:14px;font-weight:500">Recurring task</span></label>
+              <div id="mRecOpts" style="display:flex;gap:8px;margin-top:10px;overflow:hidden">
+                <span class="pill st-todo" style="padding:4px 12px;font-size:13px">Daily</span>
+                <span class="pill" id="mWeekly" style="padding:4px 12px;font-size:13px;background:var(--primary);color:#fff">Weekly · Friday</span>
+                <span class="pill st-todo" style="padding:4px 12px;font-size:13px">Monthly</span>
+              </div>
+            </div>
+            <div style="display:flex;justify-content:flex-end;gap:10px;padding-top:4px"><span class="btn" style="background:var(--bg3);color:var(--fg)">Cancel</span><span class="btn" id="mCreate">Create Task</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="c3" id="phone" style="margin:-410px 0 0 -200px">
+      <div class="phone"><div class="screen app" id="screen">
+        <div class="notch"></div>
+        <div style="height:50px"></div>
+        <div style="height:52px;background:#fff;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;padding:0 16px">
+          <div style="display:flex;align-items:center;gap:8px"><img src="../../public/brand/logo-mark.svg" style="width:24px;height:24px"><b style="font-size:15px;font-weight:600">EDL &amp; Task Tracker</b></div>
+          <span style="position:relative;color:var(--fg2);font-size:20px"><span data-i="bell"></span><span id="pBell" style="position:absolute;top:-6px;right:-8px;min-width:18px;height:18px;border-radius:9px;background:var(--danger);color:#fff;font-size:10px;font-weight:700;display:flex;align-items:center;justify-content:center">1</span></span>
+        </div>
+        <div style="padding:18px 16px 0">
+          <div style="font-size:22px;font-weight:700">My Tasks</div>
+          <div style="color:var(--fg2);font-size:13px;margin-bottom:14px">Hi Youssef — here's your day</div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px" id="pStats"></div>
+        </div>
+        <div style="margin:0 16px;border-radius:8px;overflow:hidden;border:1px solid var(--border);position:relative" id="pList"></div>
+        <div id="pComment" style="position:absolute;left:16px;right:16px;bottom:22px" class="card">
+          <div style="padding:10px 12px;font-size:12px;font-weight:600;color:var(--fg2);border-bottom:1px solid var(--border);display:flex;align-items:center;gap:6px"><span data-i="message"></span>Comments · Restock showroom samples</div>
+          <div style="padding:10px 12px;display:flex;gap:8px;align-items:center"><div class="inp" id="pCin" style="font-size:13px;min-height:34px"></div><span class="btn sm" id="pSend">Send</span></div>
+        </div>
+        <div class="toast" id="pToast" style="left:10px;right:10px;width:auto;top:54px;padding:12px"></div>
+        <div class="menu" id="pMenu"></div>
+      </div></div>
+    </div>
+    <svg id="flow" viewBox="0 0 1920 1080"><defs><linearGradient id="fg" x1="0" x2="1"><stop offset="0" stop-color="#ff6b6e"/><stop offset="1" stop-color="#7fb2ff"/></linearGradient></defs>
+      <path id="arc" d="M1252 380 C 1230 150, 1000 110, 860 250" fill="none" stroke="url(#fg)" stroke-width="3" stroke-dasharray="8 10" opacity=".9"/>
+      <g id="dots"></g>
+    </svg>
+    <div id="rtBadge" style="position:absolute;left:930px;top:70px;z-index:41;display:flex;align-items:center;gap:10px;padding:10px 18px;border-radius:999px;background:rgba(20,21,26,.85);border:1px solid rgba(255,255,255,.18);color:#fff;font-size:18px;font-weight:600;box-shadow:0 0 40px rgba(62,207,142,.25)">
+      <span style="color:#3ecf8e;font-size:22px" data-i="radio"></span>Supabase Realtime</div>
+  </div>
+
+  <!-- ============ EXPLODED ============ -->
+  <div class="scene" id="sExp" style="perspective:2600px">
+    <div class="c3" id="stack"></div>
+    <div id="labels" style="position:absolute;inset:0"></div>
+  </div>
+
+  <!-- ============ ADMIN ============ -->
+  <div class="scene" id="sAdm">
+    <div style="position:absolute;left:120px;top:250px" id="featList"></div>
+    <div class="c3" id="admWin" style="margin:-330px 0 0 -560px">
+      <div class="card app" style="width:1120px;border-radius:14px;overflow:hidden;box-shadow:0 60px 120px rgba(0,0,0,.55);background:#fff">
+        <div style="padding:22px 28px;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid var(--border)">
+          <div><div style="font-size:24px;font-weight:700">Admin Dashboard</div><div style="color:var(--fg2);font-size:15px">Manage users, roles and access</div></div>
+          <div style="display:flex;gap:14px;align-items:center">
+            <div style="display:flex;align-items:center;gap:8px;padding:6px 12px;border:1px solid var(--border);border-radius:8px;font-size:13px;color:var(--fg2)"><span style="width:8px;height:8px;border-radius:50%;background:#22c55e;box-shadow:0 0 0 3px rgba(34,197,94,.2)"></span><b id="onlineN" style="color:var(--fg)">4</b> online now</div>
+            <span class="btn"><span data-i="userplus"></span>Create User</span>
+          </div>
+        </div>
+        <div class="grid-rows" style="grid-template-columns:26% 24% 13% 21% 16%"><div class="th">User</div><div class="th">Email</div><div class="th">Role</div><div class="th">Password</div><div class="th" style="text-align:right">Actions</div></div>
+        <div id="admRows"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ OUTRO ============ -->
+  <div class="scene" id="sOut">
+    <div class="c3" id="outLogo" style="width:120px;height:120px;margin:-300px 0 0 -60px"><img src="../../public/brand/logo-mark.svg" style="width:120px;height:120px"></div>
+    <div class="c3" id="outTitle" style="width:1400px;margin:-150px 0 0 -700px;text-align:center"><div class="bigTitle" style="font-size:84px">EDL &amp; Task Tracker</div></div>
+    <div class="c3" id="outChips" style="width:1400px;margin:-10px 0 0 -700px;display:flex;justify-content:center;gap:16px"></div>
+    <div class="c3" id="outFeat" style="width:1400px;margin:90px 0 0 -700px;text-align:center;color:#b9bdc6;font-size:24px;font-weight:500">Role-based dashboards · Real-time sync · Recurring tasks · Notifications · Comments</div>
+  </div>
+
+  <div id="cap"><div id="capInner"><div id="capIcon"></div><div><div id="capK"></div><div id="capT"></div></div></div></div>
+  <svg id="cursor" viewBox="0 0 24 24"><path d="M4 2 L4 20 L9 15.5 L12.5 22.5 L15.5 21 L12 14 L19 14 Z" fill="#fff" stroke="#111" stroke-width="1.4" stroke-linejoin="round"/></svg>
+  <div class="ripple" id="ripple"></div>
+  <div class="tap" id="tap"></div>
+  <div id="fade"></div>
+</div>
+
+<script>
+/* ======================= helpers ======================= */
+const ICONS={
+ clipboard:'<rect width="8" height="4" x="8" y="2" rx="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><path d="M12 11h4"/><path d="M12 16h4"/><path d="M8 11h.01"/><path d="M8 16h.01"/>',
+ clock:'<circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>',
+ check:'<path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/>',
+ alert:'<path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3"/><path d="M12 9v4"/><path d="M12 17h.01"/>',
+ bell:'<path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/>',
+ search:'<circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/>',
+ pencil:'<path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/><path d="m15 5 4 4"/>',
+ trash:'<path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/>',
+ plus:'<path d="M5 12h14"/><path d="M12 5v14"/>',
+ repeat:'<path d="m17 2 4 4-4 4"/><path d="M3 11v-1a4 4 0 0 1 4-4h14"/><path d="m7 22-4-4 4-4"/><path d="M21 13v1a4 4 0 0 1-4 4H3"/>',
+ userplus:'<path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="19" x2="19" y1="8" y2="14"/><line x1="22" x2="16" y1="11" y2="11"/>',
+ users:'<path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>',
+ logout:'<path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" x2="9" y1="12" y2="12"/>',
+ chevron:'<path d="m6 9 6 6 6-6"/>',
+ message:'<path d="M7.9 20A9 9 0 1 0 4 16.1L2 22Z"/>',
+ eye:'<path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/>',
+ key:'<path d="m15.5 7.5 2.3 2.3a1 1 0 0 0 1.4 0l2.1-2.1a1 1 0 0 0 0-1.4L19 4"/><path d="m21 2-9.6 9.6"/><circle cx="7.5" cy="15.5" r="5.5"/>',
+ play:'<polygon points="6 3 20 12 6 21 6 3"/>',
+ calendar:'<rect width="18" height="18" x="3" y="4" rx="2"/><path d="M16 2v4"/><path d="M8 2v4"/><path d="M3 10h18"/>',
+ checkcheck:'<path d="M18 6 7 17l-5-5"/><path d="m22 10-7.5 7.5L13 16"/>',
+ shield:'<path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"/>',
+ zap:'<path d="M4 14a1 1 0 0 1-.78-1.63l9.9-10.2a.5.5 0 0 1 .86.46l-1.92 6.02A1 1 0 0 0 13 10h7a1 1 0 0 1 .78 1.63l-9.9 10.2a.5.5 0 0 1-.86-.46l1.92-6.02A1 1 0 0 0 11 14z"/>',
+ refresh:'<path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/><path d="M8 16H3v5"/>',
+ x:'<path d="M18 6 6 18"/><path d="m6 6 12 12"/>',
+ radio:'<path d="M4.9 19.1C1 15.2 1 8.8 4.9 4.9"/><path d="M7.8 16.2c-2.3-2.3-2.3-6.1 0-8.5"/><circle cx="12" cy="12" r="2"/><path d="M16.2 7.8c2.3 2.3 2.3 6.1 0 8.5"/><path d="M19.1 4.9C23 8.8 23 15.1 19.1 19"/>',
+ lock:'<rect width="18" height="11" x="3" y="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/>',
+ layout:'<rect width="18" height="18" x="3" y="3" rx="2"/><path d="M3 9h18"/><path d="M9 21V9"/>',
+};
+const ico=n=>`<svg class="i" viewBox="0 0 24 24">${ICONS[n]}</svg>`;
+const $=id=>document.getElementById(id);
+const clamp=(x,a=0,b=1)=>Math.min(b,Math.max(a,x));
+const lerp=(a,b,p)=>a+(b-a)*p;
+const seg=(t,a,b)=>clamp((t-a)/(b-a));
+const E={
+  lin:x=>x,
+  io:x=>x<.5?4*x*x*x:1-Math.pow(-2*x+2,3)/2,
+  out:x=>1-Math.pow(1-x,3),
+  out5:x=>1-Math.pow(1-x,5),
+  in:x=>x*x*x,
+  back:x=>{const c1=1.70158,c3=c1+1;return 1+c3*Math.pow(x-1,3)+c1*Math.pow(x-1,2)},
+};
+// keyframes: [[t, {props}], ...]  -> interpolated props
+function kf(t,frames,ease=E.io){
+  if(t<=frames[0][0]) return {...frames[0][1]};
+  for(let i=0;i<frames.length-1;i++){
+    const [t0,a]=frames[i],[t1,b]=frames[i+1];
+    if(t<=t1){const e=frames[i+1][2]||ease;const p=e(seg(t,t0,t1));const o={};
+      for(const k in b) o[k]=lerp(a[k]??b[k],b[k],p);
+      for(const k in a) if(!(k in o)) o[k]=a[k];
+      return o;}
+  }
+  return {...frames[frames.length-1][1]};
+}
+function pose(el,p){
+  const {x=0,y=0,z=0,rx=0,ry=0,rz=0,s=1,o}=p;
+  el.style.transform=`translate3d(${x}px,${y}px,${z}px) rotateX(${rx}deg) rotateY(${ry}deg) rotateZ(${rz}deg) scale(${s})`;
+  if(o!==undefined){el.style.opacity=o;el.style.visibility=o<=0.001?'hidden':'visible';}
+}
+// entrance: returns progress-driven pose
+function enter(el,t,t0,d,from={},ease=E.out){
+  const p=ease(seg(t,t0,t0+d)); const q={o:clamp(seg(t,t0,t0+d*0.7))};
+  for(const k in from) q[k]=lerp(from[k],k==='s'?1:0,p);
+  pose(el,q); return p;
+}
+function show(el,on){el.style.display=on?'block':'none'}
+const esc=s=>s.replace(/&/g,'&amp;').replace(/</g,'&lt;');
+function caretOn(t){return Math.floor(t*2.2)%2===0}
+function typeInto(el,text,t,t0,t1,ph='',focusWin=null){
+  const n=Math.floor(seg(t,t0,t1)*text.length);
+  const active=focusWin?(t>=focusWin[0]&&t<focusWin[1]):(t>=t0-0.4&&t<t1+0.5);
+  let h=n>0?esc(text.slice(0,n)):'';
+  if(active&&caretOn(t)) h+='<span class="caret"></span>';
+  else if(active) h+='<span class="caret" style="opacity:0"></span>';
+  if(n===0) h+=`<span class="ph">${ph}</span>`;
+  el.innerHTML=h; return n;
+}
+function opa(el,o){el.style.opacity=o;el.style.visibility=o<=0.001?'hidden':'visible'}
+// deterministic random
+let seed=7;const rnd=()=>{seed=(seed*16807)%2147483647;return (seed-1)/2147483646};
+
+/* ======================= build static content ======================= */
+document.querySelectorAll('[data-i]').forEach(e=>e.innerHTML=ico(e.dataset.i));
+
+// particles
+const pts=[];for(let i=0;i<46;i++){const d=document.createElement('div');d.className='pt';$('pts').appendChild(d);
+  pts.push({el:d,x:rnd()*1920,y:rnd()*1080,s:0.5+rnd()*1.6,sp:8+rnd()*26,ph:rnd()*6.28,a:0.12+rnd()*0.35});}
+
+// intro title letters
+$('titleLetters').innerHTML=[...'EDL & Task Tracker'].map(c=>`<span>${c===' '?'&nbsp;':esc(c)}</span>`).join('');
+const letters=[...$('titleLetters').children];
+
+// orbit mini cards
+const orbitData=[['Prepare weekly sales report','in_progress','In Progress'],['🚨 Fix pricing error','todo','To Do'],['Review client feedback','done','Done'],['Check daily stock levels','in_progress','In Progress']];
+const orbitEls=orbitData.map(([title,st,lab])=>{const d=document.createElement('div');d.className='miniCard app';d.style.background='#fff';
+  d.innerHTML=`<div class="t">${title}</div><div style="display:flex;justify-content:space-between;align-items:center"><span class="pill st-${st}"><span class="d"></span>${lab}</span><span class="av" style="width:26px;height:26px;font-size:11px">${['LB','OH','EL','YA'][orbitData.findIndex(o=>o[0]===title)]}</span></div>`;
+  d.style.marginLeft='-150px';d.style.marginTop='-50px';$('orbit').appendChild(d);return d;});
+
+// stats
+const statDefs=[['Total','clipboard','var(--info)'],['Active','clock','var(--warning)'],['Done','check','var(--success)'],['Overdue','alert','var(--danger)']];
+$('stats').innerHTML=statDefs.map(([k,i,c],n)=>`<div class="card stat" id="stat${n}"><div class="k"><span>${k}</span><span style="color:${c};opacity:.8">${ico(i)}</span></div><div class="v" id="sv${n}">0</div></div>`).join('');
+
+// rows
+const STL={todo:'To Do',in_progress:'In Progress',done:'Done'};
+const pillH=(st,inv)=>`<span class="pill st-${st}${inv?' inv':''}"><span class="d"></span>${STL[st]}</span>`;
+const ROWS=[
+ {id:'new',t:'Restock showroom samples',who:'Youssef Amrani',st:'todo',due:'Oct 24',days:0,bombe:1,rec:'weekly',created:'Oct 18, 2026'},
+ {t:'Fix pricing error on catalog page',who:'Omar Haddad',st:'todo',due:'Oct 19',days:2,bombe:1,created:'Oct 16, 2026'},
+ {t:'Check daily stock levels',who:'Omar Haddad',st:'in_progress',due:'Oct 18',days:0,rec:'daily',created:'Oct 18, 2026'},
+ {t:'Prepare weekly sales report',who:'Lina Benali',st:'in_progress',due:'Oct 20',days:5,rec:'weekly',created:'Oct 13, 2026'},
+ {t:'Call back supplier about delivery',who:'Emma Laurent',st:'todo',due:'Oct 21',days:2,self:1,created:'Oct 17, 2026'},
+ {t:'Update showroom inventory sheet',who:'Youssef Amrani',st:'in_progress',due:'Oct 22',days:3,created:'Oct 15, 2026'},
+ {t:'Review client feedback forms',who:'Lina Benali',st:'done',due:'Oct 16',days:6,created:'Oct 12, 2026'},
+ {t:'Archive September invoices',who:'Emma Laurent',st:'done',due:'Oct 15',days:8,created:'Oct 10, 2026'},
+];
+function rowHTML(r,i){
+  const cls=r.st==='done'?'done':(r.bombe?'bombe':'');
+  return `<div class="tr ${cls}" id="row${i}"><div class="grid-rows" style="height:64px">
+   <div class="td" style="display:block;padding-top:11px"><div class="tt">${esc(r.t)}${r.self?`<span class="tagS tag-self">${ico('userplus')} self-added</span>`:''}${r.rec?`<span class="tagS tag-rec">${ico('repeat')} ${r.rec}</span>`:''}</div><div class="sub">Created: ${r.created}</div></div>
+   <div class="td">${r.who}</div>
+   <div class="td" style="justify-content:center" id="rowSt${i}">${pillH(r.st)}</div>
+   <div class="td" style="justify-content:center">${r.due}</div>
+   <div class="td" style="justify-content:center"><b style="${r.bombe&&r.st!=='done'?'color:#111827':''}">${r.days} days</b></div>
+   <div class="td" style="justify-content:flex-end;gap:8px"><span class="btn ghost icon">${ico('pencil')}</span><span class="btn icon danger">${ico('trash')}</span></div>
+  </div></div>`;}
+$('rows').innerHTML=ROWS.map(rowHTML).join('');
+const rowEls=ROWS.map((r,i)=>$('row'+i));
+
+// toasts
+function toastHTML(color,icon,label,title,msg){return `<div style="display:flex;align-items:center;gap:12px;margin-bottom:12px"><div class="ic" style="background:${color}">${ico(icon)}</div><div style="flex:1"><div style="font-size:14px;font-weight:600;color:#111827">EDL &amp; Task Tracker</div><div style="font-size:12px;color:#6b7280">${label} • now</div></div><span style="color:#9ca3af">${ico('x')}</span></div>
+ <div style="font-size:15px;font-weight:600;color:#111827;line-height:1.25">${title}</div><div style="font-size:13px;color:#4b5563;margin-top:4px;line-height:1.5">${msg}</div>
+ <div style="margin-top:12px;padding-top:12px;border-top:1px solid rgba(229,231,235,.6);font-size:12px;color:#6b7280;font-weight:500">Click to view</div><div class="bar"></div>`;}
+$('toast1').innerHTML=toastHTML('#337ea9','refresh','Status updated','Restock showroom samples','Youssef Amrani moved this task to <b>In Progress</b>');
+$('toast2').innerHTML=toastHTML('#8b5cf6','message','New comment','Restock showroom samples','Youssef: “Samples arrive at 3 PM 👍”');
+$('pToast').innerHTML=`<div style="display:flex;align-items:center;gap:10px"><div class="ic" style="background:#dc2626;width:32px;height:32px;font-size:17px">${ico('bell')}</div><div style="flex:1;min-width:0"><div style="font-size:12px;color:#6b7280">New task assigned • now</div><div style="font-size:14px;font-weight:600;color:#111827">🚨 Restock showroom samples</div></div></div><div class="bar"></div>`;
+
+// phone
+$('pStats').innerHTML=[['To Do','clock','var(--warning)',3],['Active','play','var(--info)',2],['Done','check','var(--success)',7],['Overdue','alert','var(--danger)',0]].map(([k,i,c,v],n)=>`<div class="card" style="padding:10px 12px"><div style="display:flex;justify-content:space-between;font-size:12px;color:var(--fg3)"><span>${k}</span><span style="color:${c}">${ico(i)}</span></div><div id="pv${n}" style="font-size:22px;font-weight:600;margin-top:4px">${v}</div></div>`).join('');
+const PCARDS=[
+ {t:'Restock showroom samples',st:'todo',bombe:1,due:'Oct 24',sub:'Oct 18, 2026 • 0 days ago',rec:1},
+ {t:'Update showroom inventory sheet',st:'in_progress',due:'Oct 22',sub:'Oct 15, 2026 • 3 days ago'},
+ {t:'Label new product shelf',st:'todo',due:'Oct 23',sub:'Oct 17, 2026 • 1 day ago'},
+ {t:'Send delivery photos to client',st:'done',due:'Oct 17',sub:'Oct 14, 2026 • 4 days ago'},
+];
+$('pList').innerHTML=PCARDS.map((c,i)=>`<div id="pcw${i}" style="overflow:hidden"><div class="pcard ${c.bombe?'bombe':''}" style="${c.st==='done'?'opacity:.6;background:#f9fafb':''}">
+ <div style="display:flex;justify-content:space-between;gap:8px;margin-bottom:8px"><div><div class="pt1" style="${c.st==='done'?'text-decoration:line-through;color:#9ca3af':''}">${c.t}${c.rec?` <span class="tagS" style="margin-left:2px;background:rgba(255,255,255,.2);color:#fff">${ico('repeat')}</span>`:''}</div><div class="ps">${c.sub}</div></div>${c.bombe?'<span style="font-size:13px">🚨</span>':''}</div>
+ <div style="display:flex;align-items:center;gap:8px"><span id="pcs${i}">${pillSel(c.st,c.bombe)}</span><span class="duec" style="${c.bombe?'background:rgba(255,255,255,.2);color:#fff':''}">${c.due}</span></div></div></div>`).join('');
+function pillSel(st,inv){return `<span class="pill st-${st}${inv?' inv':''}" style="font-size:13px;padding:4px 8px 4px 10px"><span class="d"></span>${STL[st]} <span style="opacity:.6">${ico('chevron')}</span></span>`}
+$('pMenu').innerHTML=['todo','in_progress','done'].map(s=>`<div class="o" id="pm_${s}"><span class="pill st-${s}" style="background:none;padding:0"><span class="d"></span></span><span>${STL[s]}</span><span style="margin-left:auto;color:var(--fg3)">${s==='todo'?'✓':''}</span></div>`).join('');
+
+// flow dots
+const dots=[];for(let i=0;i<7;i++){const c=document.createElementNS('http://www.w3.org/2000/svg','circle');c.setAttribute('r',7);c.setAttribute('fill',i%2?'#7fb2ff':'#ff6b6e');c.style.filter='drop-shadow(0 0 8px currentColor)';$('dots').appendChild(c);dots.push(c);}
+const arc=$('arc');const arcLen=arc.getTotalLength();
+
+/* ---- exploded stack ---- */
+const LAYERS=[
+ {h:70,label:'Role-based dashboards',html:`<div style="height:70px;display:flex;align-items:center;justify-content:space-between;padding:0 28px"><div style="display:flex;align-items:center;gap:10px"><img src="../../public/brand/logo-mark.svg" style="width:30px"><b style="font-size:20px;font-weight:600">EDL &amp; Task Tracker</b></div><div style="display:flex;gap:8px"><span class="badge danger">Admin</span><span class="badge">Manager</span><span class="badge secondary">Employee</span></div></div>`},
+ {h:120,label:'Live stats',html:`<div style="padding:18px;display:grid;grid-template-columns:repeat(4,1fr);gap:14px">${[['Total',25,'clipboard','var(--info)'],['Active',16,'clock','var(--warning)'],['Done',9,'check','var(--success)'],['Overdue',2,'alert','var(--danger)']].map(([k,v,i,c])=>`<div class="card stat"><div class="k"><span>${k}</span><span style="color:${c}">${ico(i)}</span></div><div class="v">${v}</div></div>`).join('')}</div>`},
+ {h:300,label:'Smart task list — BOMBE first',html:`<div style="padding:16px"><div class="card" style="overflow:hidden">${ROWS.slice(0,4).map((r,i)=>rowHTML(r,'x'+i)).join('')}</div></div>`},
+ {h:250,label:'Employee tracking',html:`<div style="padding:18px;display:grid;grid-template-columns:1fr 1fr;gap:16px">${[['YA','Youssef Amrani',6,[3,2,7],1],['LB','Lina Benali',5,[1,3,9],0]].map(([ini,n,tot,s,b])=>`<div class="card" style="overflow:hidden"><div style="padding:12px 14px;background:var(--bg3);border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center"><div style="display:flex;gap:8px;align-items:center"><span class="av" style="width:32px;height:32px;font-size:13px">${ini}</span><div><div style="font-weight:600;font-size:14px">${n}</div><div style="font-size:12px;color:var(--fg3)">${tot} tasks</div></div></div><div style="display:flex;gap:4px;font-size:12px"><span style="padding:2px 6px;border-radius:4px;background:#fed7aa;color:#7c2d12">${s[0]}</span><span style="padding:2px 6px;border-radius:4px;background:#bfdbfe;color:#1e3a8a">${s[1]}</span><span style="padding:2px 6px;border-radius:4px;background:#bbf7d0;color:#14532d">${s[2]}</span>${b?'<span style="padding:2px 6px;border-radius:4px;background:#fecaca;color:#7f1d1d;font-weight:700">🚨1</span>':''}</div></div>${[0,1,2].map(k=>`<div style="padding:9px 14px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;font-size:13px"><span>${['Restock showroom samples','Update inventory sheet','Label new product shelf','Prepare weekly sales report','Review client feedback','Plan showroom visit'][k+(b?0:3)]}</span>${pillH(['todo','in_progress','done'][k])}</div>`).join('')}</div>`).join('')}</div>`},
+ {h:250,label:'Notification inbox',html:`<div style="padding:16px"><div class="card" style="overflow:hidden"><div style="padding:10px 14px;background:var(--bg3);border-bottom:1px solid var(--border);display:flex;justify-content:space-between"><div style="display:flex;gap:4px"><span style="padding:5px 12px;background:#fff;border-radius:6px;font-size:13px;font-weight:500;box-shadow:0 1px 2px rgba(0,0,0,.06)">Unread <span class="cnt" style="margin-left:4px">3</span></span><span style="padding:5px 12px;font-size:13px;color:var(--fg2)">Read</span></div><span style="font-size:13px;color:var(--primary);font-weight:500;display:flex;gap:4px;align-items:center">${ico('checkcheck')} Mark all as read</span></div>${[['#337ea9','refresh','Status updated','Youssef moved “Restock showroom samples” to In Progress'],['#8b5cf6','message','New comment','Youssef: “Samples arrive at 3 PM 👍”'],['#448361','check','Task completed','Lina completed “Review client feedback forms”']].map(([c,i,ti,m])=>`<div style="display:flex;gap:12px;padding:10px 14px;border-bottom:1px solid var(--border);background:var(--bga)"><div style="width:34px;height:34px;border-radius:8px;background:${c};color:#fff;display:flex;align-items:center;justify-content:center">${ico(i)}</div><div><div style="font-size:13px;font-weight:600;display:flex;gap:6px;align-items:center"><span style="width:7px;height:7px;border-radius:50%;background:var(--primary)"></span>${ti}</div><div style="font-size:13px;color:var(--fg2)">${m}</div></div></div>`).join('')}</div></div>`},
+];
+const LW=1000;
+const layerEls=LAYERS.map((L,i)=>{const d=document.createElement('div');d.className='layer app';d.style.width=LW+'px';d.style.height=L.h+'px';d.style.left=-LW/2+'px';d.style.top=-L.h/2+'px';d.style.background='#fff';d.innerHTML=L.html;
+  const anc=document.createElement('div');anc.style.cssText=`position:absolute;left:${LW-2}px;top:${L.h/2}px;width:2px;height:2px`;d.appendChild(anc);
+  const lab=document.createElement('div');lab.className='llabel';lab.innerHTML=`<div class="in"><span class="n">${i+1}</span>${L.label}</div>`;$('labels').appendChild(lab);
+  const line=document.createElement('div');line.style.cssText='position:absolute;height:2px;background:linear-gradient(90deg,rgba(255,107,110,.9),rgba(255,255,255,.35));transform-origin:0 50%';$('labels').appendChild(line);lab.line=line;lab.anc=anc;
+  $('stack').appendChild(d);return {d,lab};});
+
+/* ---- admin ---- */
+const USERS=[['SM','Sarah Martin','sarah@demo.team','Manager','primary','m4Rt!n#26',1],['YA','Youssef Amrani','youssef@demo.team','Employee','secondary','Yo9$kL2p',1],['LB','Lina Benali','lina@demo.team','Employee','secondary','Lb#71xQe',1],['OH','Omar Haddad','omar@demo.team','Employee','secondary','oH5!t2Wd',0],['AD','Alex Dupont','admin@demo.team','Admin','danger','Ad$9zK1m',1]];
+$('admRows').innerHTML=USERS.map(([ini,n,e,r,v,pw,on],i)=>`<div class="tr" id="au${i}"><div class="grid-rows" style="grid-template-columns:26% 24% 13% 21% 16%;height:62px">
+ <div class="td" style="gap:10px;color:var(--fg)"><span style="position:relative"><span class="av" style="width:34px;height:34px;font-size:13px">${ini}</span>${on?'<span style="position:absolute;right:-1px;bottom:-1px;width:11px;height:11px;border-radius:50%;background:#22c55e;border:2px solid #fff"></span>':''}</span><b style="font-weight:500">${n}</b></div>
+ <div class="td">${e}</div><div class="td"><span class="badge ${v==='primary'?'':v}">${r}</span></div>
+ <div class="td" style="gap:10px"><span id="apw${i}" style="font-family:'JetBrains Mono',Consolas,monospace;font-size:14px;color:var(--fg);min-width:96px">••••••••</span><span style="color:var(--fg3)">${ico('eye')}</span></div>
+ <div class="td" style="justify-content:flex-end;gap:6px"><span class="btn ghost icon" style="color:var(--warning)">${ico('key')}</span><span class="btn ghost icon">${ico('pencil')}</span><span class="btn icon danger">${ico('trash')}</span></div></div></div>`).join('');
+const FEATS=[['users','Admin user management'],['shield','Role-based access with RLS'],['key','Reset password & force logout'],['radio','Live “who’s online” presence']];
+$('featList').innerHTML=`<div style="font-size:15px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:#ff6b6e;margin-bottom:24px" id="featK">Admin &amp; security</div>`+FEATS.map(([i,l],n)=>`<div class="feat" id="feat${n}"><span class="ic">${ico(i)}</span>${l}</div>`).join('');
+
+$('outChips').innerHTML=[['Next.js 16','#fff'],['React 19','#61dafb'],['Supabase','#3ecf8e'],['Tailwind CSS 4','#38bdf8'],['TypeScript','#3178c6']].map(([l,c],i)=>`<span class="chip" id="chip${i}"><b style="background:${c}"></b>${l}</span>`).join('');
+
+/* ======================= captions ======================= */
+const CAPS=[
+ [6.0,10.6,'lock','Secure sign-in','Log in with your email — or simply your name'],
+ [11.8,18.6,'layout','Manager dashboard','Assign, prioritize and track your whole team'],
+ [19.6,25.6,'plus','Create in seconds','BOMBE urgency, due dates & recurring schedules'],
+ [26.6,35.0,'zap','Real-time sync','Every change lands instantly — on every device'],
+ [36.2,43.2,'layout','Under the hood','Everything a team needs, in one place'],
+ [44.4,49.6,'shield','Admin & security','Users, roles, passwords and live presence'],
+];
+
+/* ======================= cursor ======================= */
+function center(el,ox=0.5,oy=0.5){const r=el.getBoundingClientRect();return [r.left+r.width*ox,r.top+r.height*oy]}
+// cursor tracks: [time, target(fn->[x,y])]
+const CUR=[
+ [6.2,()=>[1300,820]],
+ [6.8,()=>center($('lgUser'),0.3)],
+ [8.0,()=>center($('lgUser'),0.3)],
+ [8.3,()=>center($('lgPass'),0.3)],
+ [9.3,()=>center($('lgPass'),0.3)],
+ [9.75,()=>center($('lgBtn'))],
+ [10.5,()=>center($('lgBtn'))],
+ [18.6,()=>[1500,700]],
+ [19.5,()=>center($('createBtn'))],
+ [19.9,()=>center($('createBtn'))],
+ [20.4,()=>center($('mTitle'),0.25)],
+ [21.9,()=>center($('mTitle'),0.25)],
+ [22.4,()=>center($('mAssign'),0.25)],
+ [23.0,()=>center($('mDDo'),0.3)],
+ [23.3,()=>center($('mDDo'),0.3)],
+ [23.6,()=>center($('mBombe'))],
+ [23.9,()=>center($('mBombe'))],
+ [24.2,()=>center($('mDue'),0.4)],
+ [24.45,()=>center($('mDue'),0.4)],
+ [24.75,()=>center($('mRec'))],
+ [25.0,()=>center($('mRec'))],
+ [25.4,()=>center($('mCreate'))],
+ [26.0,()=>center($('mCreate'))],
+ [26.4,()=>[1500,980]],
+];
+const CLICKS=[8.25,9.95,19.7,20.45,23.1,23.7,24.35,24.85,25.6];
+const CUR_VIS=[[6.2,10.6],[18.6,26.4]];
+function cursorAt(t){
+  for(let i=0;i<CUR.length-1;i++){const [t0,f0]=CUR[i],[t1,f1]=CUR[i+1];
+    if(t>=t0&&t<=t1){const a=f0(),b=f1();const p=E.io(seg(t,t0,t1));return [lerp(a[0],b[0],p),lerp(a[1],b[1],p)];}}
+  return null;
+}
+
+/* ======================= render(t) ======================= */
+function render(t){
+  // background
+  $('floor').style.backgroundPosition=`0px ${t*46}px`;
+  $('g1').style.transform=`translate(${Math.sin(t*.3)*60}px,${Math.cos(t*.25)*40}px)`;
+  $('g2').style.transform=`translate(${Math.cos(t*.22)*70}px,${Math.sin(t*.3)*50}px)`;
+  for(const p of pts){const y=((p.y-t*p.sp)%1080+1080)%1080;p.el.style.transform=`translate(${p.x+Math.sin(t*.6+p.ph)*18}px,${y}px) scale(${p.s})`;p.el.style.opacity=p.a*(0.6+0.4*Math.sin(t*1.3+p.ph));}
+  opa($('fade'), Math.max(1-seg(t,0,0.8), seg(t,55.0,56.2)));
+
+  /* ---------- INTRO 0–5.8 ---------- */
+  const inI=t<6; show($('sIntro'),inI);
+  if(inI){
+    const out=E.in(seg(t,4.9,5.8));
+    pose($('introRig'),{z:out*900,o:1-out});
+    pose($('introLogo'),{...kf(t,[[0.3,{ry:-120,s:.4,y:40,o:0}],[1.5,{ry:0,s:1,y:0,o:1}]],E.out), rz:0});
+    $('introLogo').style.transform+=` rotateY(${Math.sin(t*1.2)*8}deg)`;
+    letters.forEach((l,i)=>{const p=E.back(seg(t,1.0+i*0.035,1.6+i*0.035));l.style.transform=`translateY(${(1-p)*80}px) rotateX(${(1-p)*-90}deg)`;l.style.opacity=clamp(seg(t,1.0+i*0.035,1.4+i*0.035));});
+    enter($('introTag'),t,2.0,0.9,{y:30});
+    orbitEls.forEach((el,i)=>{const a=t*0.55+i*Math.PI/2;const x=Math.sin(a)*640,z=Math.cos(a)*380-200,y=Math.sin(a*1.3+i)*60+(i%2?-150:170);
+      const o=clamp(seg(t,2.4+i*0.2,3.2+i*0.2))*(z>-560?1:0.6);
+      el.style.transform=`translate3d(${x}px,${y}px,${z}px) rotateY(${Math.sin(a)*-30}deg) rotateX(8deg)`;el.style.opacity=o;});
+  }
+
+  /* ---------- LOGIN 5.2–11.4 ---------- */
+  const inL=t>=5.2&&t<11.6; show($('sLogin'),inL);
+  if(inL){
+    let p=kf(t,[[5.2,{z:-1600,rx:55,ry:-25,y:120,o:0}],[6.6,{z:-180,rx:12,ry:-8,y:10,o:1}],[10.3,{z:-60,rx:4,ry:6,y:0,o:1}],[11.4,{z:600,rx:-70,ry:10,y:-500,o:0}]]);
+    pose($('loginCard'),{...p,s:1.25});
+    typeInto($('lgUser'),'Sarah Martin',t,6.9,7.9,'Work email or your name',[6.8,8.2]);
+    $('lgUser').classList.toggle('focus',t>=6.8&&t<8.2);
+    $('lgPass').classList.toggle('focus',t>=8.25&&t<9.7);
+    const np=Math.floor(seg(t,8.4,9.3)*10);$('lgPassT').innerHTML=np?'<span style="letter-spacing:3px;font-size:18px">'+'•'.repeat(np)+'</span>':'<span class="ph">Enter your password</span>';
+    const pressed=t>=9.95;$('lgBtn').innerHTML=pressed?'<svg viewBox="0 0 24 24" style="width:18px;height:18px;animation:none;transform:rotate('+(t*720)+'deg)"><circle cx="12" cy="12" r="10" stroke="#fff" stroke-opacity=".25" stroke-width="4" fill="none"/><path d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" fill="#fff" opacity=".75"/></svg>Signing in…':'Login';
+    $('lgBtn').style.transform=`scale(${t>=9.95&&t<10.1?0.97:1})`;
+  }
+
+  /* ---------- APP 10.8–35.6 ---------- */
+  const inA=t>=10.8&&t<35.8; show($('sApp'),inA);
+  if(inA){
+    const W=kf(t,[
+      [10.8,{x:0,y:200,z:-1800,rx:40,ry:-30,rz:8,o:0}],
+      [12.4,{x:40,y:-20,z:-560,rx:14,ry:-16,rz:0.6,o:1}],
+      [18.4,{x:40,y:-40,z:-430,rx:8,ry:-9,rz:0.2,o:1}],
+      [19.8,{x:0,y:-50,z:-300,rx:2,ry:-2,rz:0,o:1}],
+      [20.6,{x:0,y:-10,z:-120,rx:0,ry:0,rz:0,o:1}],
+      [25.4,{x:0,y:-10,z:-120,rx:0,ry:0,rz:0,o:1}],
+      [26.3,{x:0,y:-40,z:-420,rx:4,ry:-3,rz:0,o:1}],
+      [27.4,{x:-330,y:-30,z:-700,rx:6,ry:20,rz:0,o:1}],
+      [34.6,{x:-300,y:-30,z:-640,rx:5,ry:16,rz:0,o:1}],
+      [35.6,{x:-300,y:-30,z:-2200,rx:30,ry:30,rz:0,o:0}],
+    ]);
+    pose($('win'),W);
+    // stats count
+    const add=seg(t,26.0,26.4)>0?1:0;
+    const sp=E.out(seg(t,12.0,13.6));
+    [24,15,9,2].forEach((v,i)=>{$('sv'+i).textContent=Math.round(v*sp)+(i<2?add:0);enter($('stat'+i),t,11.6+i*0.1,0.6,{y:20});});
+    // rows
+    rowEls.forEach((el,i)=>{
+      if(i===0){const h=E.out(seg(t,25.9,26.4))*65;el.style.height=h+'px';el.style.opacity=seg(t,25.9,26.3);
+        const fl=seg(t,26.3,27.6);el.style.boxShadow=fl>0&&fl<1?`inset 0 0 0 ${2}px rgba(220,38,38,${(1-fl)*.8})`:'none';
+        return;}
+      const p=E.out(seg(t,12.4+i*0.09,13.0+i*0.09));el.style.transform=`translateX(${(1-p)*60}px)`;el.style.opacity=p;
+    });
+    // realtime status on row 0
+    const stChanged=t>=31.35;$('rowSt0').innerHTML=pillH(stChanged?'in_progress':'todo');
+    const fl2=seg(t,31.35,32.4);$('rowSt0').style.transform=`scale(${1+Math.sin(fl2*Math.PI)*0.25})`;
+    $('bellN').textContent=t>=34.25?4:(t>=31.4?3:2);$('tabN').textContent=$('bellN').textContent;
+    // toasts
+    [[31.45,'toast1'],[34.25,'toast2']].forEach(([t0,id])=>{const p=E.out(seg(t,t0,t0+0.45));const el=$(id);el.style.transform=`translateX(${(1-p)*440}px)`;el.style.opacity=p;el.querySelector('.bar').style.width=(100-seg(t,t0,t0+5)*100)+'%';});
+    // modal
+    const mo=kf(t,[[19.75,{o:0,s:.94,y:20}],[20.05,{o:1,s:1,y:0}],[25.65,{o:1,s:1,y:0}],[25.85,{o:0,s:.96,y:10}]],E.out);
+    opa($('backdrop'),mo.o);const m=$('modal');m.style.opacity=mo.o;m.style.visibility=mo.o>0?'visible':'hidden';m.style.transform=`translate(-50%,-50%) translateY(${mo.y}px) scale(${mo.s})`;
+    typeInto($('mTitle'),'Restock showroom samples',t,20.55,21.7,'Enter task title',[20.45,22.0]);$('mTitle').classList.toggle('focus',t>=20.45&&t<22.0);
+    typeInto($('mDesc'),'Bring the new fabric samples to the front display.',t,21.75,22.25,'Enter task details',[21.7,22.4]);
+    typeInto($('mAssignT'),t>=23.1?'Youssef Amrani':'You',t,22.5,22.8,'Search and select employee...',[22.45,23.1]);
+    if(t>=23.1) $('mAssignT').textContent='Youssef Amrani';
+    $('mAssign').classList.toggle('focus',t>=22.45&&t<23.1);
+    opa($('mDD'),t>=22.75&&t<23.15?1:0); opa($('mSel'),t>=23.15?1:0);
+    $('mBombe').className='cb'+(t>=23.7?' on':'');$('mBombe').textContent=t>=23.7?'✓':'';
+    $('mDueT').className=t>=24.35?'':'ph';$('mDueT').textContent=t>=24.35?'Fri, Oct 24, 2026':'Pick a date';
+    $('mRec').className='cb'+(t>=24.85?' onp':'');$('mRec').textContent=t>=24.85?'✓':'';
+    const ro=E.out(seg(t,24.85,25.15));$('mRecOpts').style.maxHeight=ro*40+'px';$('mRecOpts').style.marginTop=ro*10+'px';
+    $('mCreate').style.transform=`scale(${t>=25.6&&t<25.72?0.96:1})`;
+
+    // phone
+    const P=kf(t,[[26.2,{x:1300,y:40,z:-300,rx:6,ry:-50,rz:6,o:0}],[27.5,{x:520,y:0,z:-200,rx:4,ry:-18,rz:0,o:1}],[34.6,{x:500,y:0,z:-180,rx:3,ry:-14,rz:0,o:1}],[35.6,{x:500,y:0,z:-2000,rx:30,ry:-30,o:0}]]);
+    pose($('phone'),P);
+    const nc=E.out(seg(t,28.0,28.5));$('pcw0').style.maxHeight=nc*140+'px';$('pcw0').style.opacity=nc;
+    $('pv0').textContent=t>=28.2?(t>=30.5?3:4):3;$('pv1').textContent=t>=30.5?3:2;
+    $('pBell').textContent=t>=28.0?2:1;
+    const pt=kf(t,[[27.9,{o:0,y:-80}],[28.3,{o:1,y:0}],[29.6,{o:1,y:0}],[29.9,{o:0,y:-60}]],E.out);
+    $('pToast').style.opacity=pt.o;$('pToast').style.transform=`translateY(${pt.y}px)`;$('pToast').querySelector('.bar').style.width=(100-seg(t,27.9,29.9)*100)+'%';
+    $('pcs0').innerHTML=pillSel(t>=30.45?'in_progress':'todo',1);
+    // status menu
+    const pm=$('pMenu');const mOpen=t>=30.0&&t<30.5;opa(pm,mOpen?1:0);
+    if(mOpen){const sr=$('screen').getBoundingClientRect(),pr=$('pcs0').getBoundingClientRect();const sc=sr.width/372;
+      pm.style.left=((pr.left-sr.left)/sc)+'px';pm.style.top=((pr.bottom-sr.top)/sc+4)+'px';$('pm_in_progress').classList.toggle('hl',t>=30.3);}
+    // comment box
+    const cb=kf(t,[[32.0,{o:0,y:30}],[32.4,{o:1,y:0}]],E.out);$('pComment').style.opacity=cb.o;$('pComment').style.transform=`translateY(${cb.y}px)`;
+    typeInto($('pCin'),t>=33.6?'':'Samples arrive at 3 PM 👍',t,32.5,33.3,t>=33.6?'Sent ✓':'Add a comment...',[32.4,33.5]);
+    // taps
+    const tap=$('tap');let tp=null;
+    for(const [tt,fn] of [[29.95,()=>center($('pcs0'),0.4)],[30.4,()=>center($('pm_in_progress'),0.4)],[33.45,()=>center($('pSend'))]]){if(t>=tt-0.25&&t<tt+0.35){tp=[fn(),seg(t,tt-0.25,tt+0.35)];}}
+    if(tp){tap.style.left=tp[0][0]+'px';tap.style.top=tp[0][1]+'px';tap.style.opacity=Math.sin(tp[1]*Math.PI);tap.style.transform=`scale(${0.7+tp[1]*0.6})`;tap.style.visibility='visible'}else opa(tap,0);
+    // realtime arc + packets
+    const ar=kf(t,[[27.6,{o:0}],[28.2,{o:1}],[34.8,{o:1}],[35.3,{o:0}]]);
+    arc.style.opacity=ar.o*0.9;arc.style.strokeDashoffset=-t*60;opa($('rtBadge'),ar.o);$('rtBadge').style.transform=`translateY(${Math.sin(t*2)*4}px)`;
+    const bursts=[[24.0,1],[30.55,0],[33.55,0]];
+    dots.forEach((d,i)=>{let vis=0,pos=0;for(const [b,dir] of bursts){const q=seg(t,b+i*0.07,b+0.75+i*0.07);if(q>0&&q<1){vis=1;pos=dir?q:1-q;}}
+      const pt2=arc.getPointAtLength(arcLen*E.io(pos));d.setAttribute('cx',pt2.x);d.setAttribute('cy',pt2.y);d.style.opacity=vis*ar.o;});
+  } else opa($('tap'),0);
+
+  /* ---------- EXPLODED 35.2–44 ---------- */
+  const inE=t>=35.2&&t<44.4; show($('sExp'),inE);
+  if(inE){
+    const S=kf(t,[[35.2,{z:-2400,o:0,rx:58,rz:-46,y:0}],[36.6,{z:-1000,o:1,rx:50,rz:-36,y:-40}],[43.2,{z:-880,o:1,rx:47,rz:-26,y:-50}],[44.3,{z:-2600,o:0,rx:55,rz:-12,y:-50}]]);
+    $('stack').style.transform=`translate3d(-260px,${S.y}px,${S.z}px) rotateX(${S.rx}deg) rotateZ(${S.rz}deg)`;$('stack').style.opacity=S.o;
+    const spread=E.io(seg(t,36.4,38.4));
+    const n=layerEls.length;
+    layerEls.forEach(({d,lab},i)=>{const k=n-1-i; // header on top
+      const z=k*(14+spread*170)-(n-1)*(14+spread*170)/2;
+      const yoff=(i-(n-1)/2)*spread*-30;
+      d.style.transform=`translate3d(0,${yoff}px,${z}px)`;
+      const lp=E.out(seg(t,38.0+k*0.25,38.6+k*0.25));
+      const r=lab.anc.getBoundingClientRect();const lx=1330+(1-lp)*-40,ly=r.top-27-(k-2)*10;
+      lab.style.transform=`translate(${lx}px,${ly}px)`;lab.style.opacity=lp*S.o;
+      const dx=lx-r.left,dy=(ly+27)-r.top;lab.line.style.width=Math.hypot(dx,dy)*lp+'px';lab.line.style.transform=`translate(${r.left}px,${r.top}px) rotate(${Math.atan2(dy,dx)}rad)`;lab.line.style.opacity=lp*S.o*.8;
+    });
+  }
+
+  /* ---------- ADMIN 43.8–50.4 ---------- */
+  const inD=t>=43.8&&t<50.6; show($('sAdm'),inD);
+  if(inD){
+    const A=kf(t,[[43.8,{x:1400,y:20,z:-600,rx:8,ry:-60,rz:4,o:0}],[45.2,{x:290,y:-40,z:-500,rx:6,ry:-18,rz:0,o:1}],[49.6,{x:250,y:-40,z:-420,rx:4,ry:-12,rz:0,o:1}],[50.5,{x:250,y:-40,z:-2000,rx:20,ry:-30,o:0}]]);
+    pose($('admWin'),A);
+    const fo=1-seg(t,49.7,50.4);
+    $('featK').style.opacity=seg(t,44.4,45)*fo;
+    FEATS.forEach((f,i)=>{const p=E.out(seg(t,44.8+i*0.25,45.5+i*0.25));const el=$('feat'+i);el.style.transform=`translateX(${(1-p)*-80}px)`;el.style.opacity=p*fo;});
+    USERS.forEach((u,i)=>{const p=E.out(seg(t,45.0+i*0.08,45.5+i*0.08));$('au'+i).style.opacity=p;
+      const rv=i===1&&t>=46.9&&t<49.0;$('apw'+i).textContent=rv?u[5]:'••••••••';$('apw'+i).style.color=rv?'var(--primary)':'var(--fg)';
+      $('au'+i).style.background=rv?'var(--bga)':'';});
+    $('onlineN').textContent=t>=47.8?5:4;
+  }
+
+  /* ---------- OUTRO 50–56 ---------- */
+  const inO=t>=49.9; show($('sOut'),inO);
+  if(inO){
+    pose($('outLogo'),{...kf(t,[[50.0,{ry:-180,s:.3,o:0}],[51.0,{ry:0,s:1,o:1}]],E.out)});
+    $('outLogo').style.transform+=` rotateY(${Math.sin(t*1.4)*12}deg)`;
+    enter($('outTitle'),t,50.4,0.9,{y:50,rx:-40});
+    for(let i=0;i<5;i++) enter($('chip'+i),t,51.2+i*0.12,0.7,{y:30,rx:-60,s:.8},E.back);
+    enter($('outFeat'),t,52.2,0.9,{y:20});
+  }
+
+  /* ---------- captions ---------- */
+  let cap=null;for(const c of CAPS) if(t>=c[0]-0.1&&t<c[1]+0.4) cap=c;
+  const ci=$('capInner');
+  if(cap){const p=E.out(seg(t,cap[0],cap[0]+0.5)),q=1-E.in(seg(t,cap[1],cap[1]+0.35));
+    if($('capT').textContent!==cap[4]){$('capT').textContent=cap[4];$('capK').textContent=cap[3];$('capIcon').innerHTML=ico(cap[2]);}
+    ci.style.opacity=Math.min(p,q);ci.style.transform=`translateY(${(1-p)*40}px) scale(${0.96+0.04*p})`;}
+  else ci.style.opacity=0;
+
+  /* ---------- cursor ---------- */
+  const vis=CUR_VIS.some(([a,b])=>t>=a&&t<b);const cur=$('cursor');
+  const cp=vis?cursorAt(t):null;
+  if(cp){cur.style.opacity=Math.min(seg(t,CUR_VIS[0][0],CUR_VIS[0][0]+.3)+(t>CUR_VIS[0][1]?1:0),1);cur.style.transform=`translate(${cp[0]-6}px,${cp[1]-3}px)`;
+    const cv=CUR_VIS.find(([a,b])=>t>=a&&t<b);cur.style.opacity=Math.min(seg(t,cv[0],cv[0]+.3),1-seg(t,cv[1]-.3,cv[1]));}
+  else cur.style.opacity=0;
+  const rp=$('ripple');let rk=null;for(const c of CLICKS) if(t>=c&&t<c+0.45) rk=c;
+  if(rk!==null&&cp){const q=seg(t,rk,rk+0.45);rp.style.left=cp[0]+'px';rp.style.top=cp[1]+'px';rp.style.opacity=1-q;rp.style.transform=`scale(${0.3+q*0.9})`;}
+  else rp.style.opacity=0;
+}
+window.render=render;
+window.DURATION=56.2;
+// preview mode: ?t=12 renders a still; ?play plays in real time
+const qs=new URLSearchParams(location.search);
+if(qs.has('play')){const st=performance.now();(function loop(){render(((performance.now()-st)/1000)%window.DURATION);requestAnimationFrame(loop)})();}
+else render(parseFloat(qs.get('t')||'2.5'));
+</script>
+</body>
+</html>
