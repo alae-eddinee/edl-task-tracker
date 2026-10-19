@@ -32,6 +32,11 @@ interface RecurringTasksProps {
 
 const patternOf = (t: Task): RecurrencePattern => t.recurrence_pattern || 'daily';
 
+const isDone = (t: Task) => t.status === 'done';
+
+// Same treatment as the Tasks tab: done rows are faded, greyed and struck through
+const struck = (t: Task) => (isDone(t) ? 'line-through text-gray-400' : '');
+
 const isOverdue = (t: Task) =>
   !!t.due_date && t.status !== 'done' && startOfDay(gmt(t.due_date)) < startOfDay(gmt(now()));
 
@@ -42,6 +47,9 @@ export function RecurringTasks({ tasks, onOpen, showAssignee, onStatusChange, mu
   const recurring = tasks
     .filter((t) => t.is_recurring)
     .sort((a, b) => {
+      // Done tasks go to the bottom, like the other task lists
+      if (a.status === 'done' && b.status !== 'done') return 1;
+      if (b.status === 'done' && a.status !== 'done') return -1;
       if (!a.due_date) return 1;
       if (!b.due_date) return -1;
       return new Date(a.due_date).getTime() - new Date(b.due_date).getTime();
@@ -94,7 +102,9 @@ export function RecurringTasks({ tasks, onOpen, showAssignee, onStatusChange, mu
     );
 
   const titleClass = (task: Task) =>
-    task.priority === 'bombe' && task.status !== 'done' ? 'text-red-600 font-bold' : 'text-[var(--foreground)]';
+    isDone(task)
+      ? 'line-through text-gray-400'
+      : task.priority === 'bombe' ? 'text-red-600 font-bold' : 'text-[var(--foreground)]';
 
   return (
     <Card padding="none" className="overflow-hidden">
@@ -143,7 +153,11 @@ export function RecurringTasks({ tasks, onOpen, showAssignee, onStatusChange, mu
                   <tr
                     key={task.id}
                     onClick={() => onOpen(task)}
-                    className={`cursor-pointer transition-colors ${task.priority === 'bombe' && task.status !== 'done' ? 'bg-red-50 hover:bg-red-100' : 'hover:bg-[var(--background-secondary)]'}`}
+                    className={`cursor-pointer transition-colors ${
+                      isDone(task)
+                        ? 'opacity-50 bg-gray-50 hover:bg-gray-100'
+                        : task.priority === 'bombe' ? 'bg-red-50 hover:bg-red-100' : 'hover:bg-[var(--background-secondary)]'
+                    }`}
                   >
                     <td className="px-4 py-3">
                       <p className={`font-medium ${titleClass(task)}`}>{task.title}</p>
@@ -152,8 +166,8 @@ export function RecurringTasks({ tasks, onOpen, showAssignee, onStatusChange, mu
                       )}
                     </td>
                     <td className="px-4 py-3">{frequency(task)}</td>
-                    {showAssignee && <td className="px-4 py-3 text-sm text-[var(--foreground-secondary)]">{task.assigned_to_name || 'Unknown'}</td>}
-                    <td className="px-4 py-3 text-sm text-center text-[var(--foreground-secondary)]">{due(task)}</td>
+                    {showAssignee && <td className={`px-4 py-3 text-sm ${struck(task) || 'text-[var(--foreground-secondary)]'}`}>{task.assigned_to_name || 'Unknown'}</td>}
+                    <td className={`px-4 py-3 text-sm text-center ${struck(task) || 'text-[var(--foreground-secondary)]'}`}>{due(task)}</td>
                     <td className="px-4 py-3 text-center">{status(task)}</td>
                     {(onEdit || onDelete) && <td className="px-4 py-3">{actions(task)}</td>}
                   </tr>
@@ -168,19 +182,21 @@ export function RecurringTasks({ tasks, onOpen, showAssignee, onStatusChange, mu
               <div
                 key={task.id}
                 onClick={() => onOpen(task)}
-                className={`p-3 cursor-pointer ${task.priority === 'bombe' && task.status !== 'done' ? 'bg-red-50' : 'bg-[var(--background)]'}`}
+                className={`p-3 cursor-pointer ${
+                  isDone(task) ? 'opacity-60 bg-gray-50' : task.priority === 'bombe' ? 'bg-red-50' : 'bg-[var(--background)]'
+                }`}
               >
                 <div className="flex items-start justify-between gap-2 mb-2">
                   <div className="min-w-0">
                     <p className={`font-medium text-sm leading-tight ${titleClass(task)}`}>{task.title}</p>
-                    {showAssignee && <p className="text-xs text-[var(--foreground-tertiary)]">{task.assigned_to_name || 'Unknown'}</p>}
+                    {showAssignee && <p className={`text-xs ${struck(task) || 'text-[var(--foreground-tertiary)]'}`}>{task.assigned_to_name || 'Unknown'}</p>}
                   </div>
                   {actions(task, true)}
                 </div>
                 <div className="flex flex-wrap items-center gap-2 text-xs">
                   {frequency(task)}
                   {status(task)}
-                  <span className="ml-auto px-2 py-1 rounded bg-gray-100 text-gray-600">{due(task)}</span>
+                  <span className={`ml-auto px-2 py-1 rounded bg-gray-100 ${struck(task) || 'text-gray-600'}`}>{due(task)}</span>
                 </div>
               </div>
             ))}
