@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
 import { useAuth, useTaskNotifications, useNotifications, notificationToToast } from '@/hooks';
 import { Header, StatsCard, NotificationInbox, RecurringTasks } from '@/components/layout';
-import { Button, Card, Modal, Textarea, Input, DatePicker, StatusSelect } from '@/components/ui';
+import { Button, Card, Modal, Textarea, Input, DatePicker, StatusSelect, EditedBadge, EditedNote } from '@/components/ui';
 import { TaskNotificationProvider } from '@/hooks/useTaskNotifications';
 import { TaskToastNotifications } from '@/components/ui/TaskToastNotifications';
 import type { Task, TaskStatus, TaskPriority, Comment, Notification, RecurrencePattern } from '@/types';
@@ -18,6 +18,7 @@ import {
   AlertTriangle,
   Play,
   Trash2,
+  Pencil,
   Repeat,
   Plus,
   Bell,
@@ -66,6 +67,8 @@ function EmployeeDashboardInner() {
   const [activeTab, setActiveTab] = useState<'tasks' | 'recurring' | 'inbox'>('tasks');
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [newTask, setNewTask] = useState(emptyNewTask);
+  // Set while the add-task form is editing one of the employee's own tasks
+  const [editingTask, setEditingTask] = useState<Task | null>(null);
   const [createLoading, setCreateLoading] = useState(false);
   const [tasks, setTasks] = useState<Task[]>([]);
   const [loading, setLoading] = useState(true);
@@ -412,6 +415,53 @@ function EmployeeDashboardInner() {
   const closeCreateModal = () => {
     setShowCreateModal(false);
     setNewTask(emptyNewTask);
+    setEditingTask(null);
+  };
+
+  // Employees may edit only the tasks they added for themselves (enforced by the guard_task_update trigger)
+  const isOwnTask = (task: Task) => task.created_by === profile?.id && task.assigned_to === profile?.id;
+
+  const openEditOwnTask = (task: Task) => {
+    if (!isOwnTask(task)) return;
+    setNewTask({
+      title: task.title,
+      description: task.description || '',
+      due_date: task.due_date || '',
+      priority: task.priority,
+      isRecurring: !!task.is_recurring,
+      recurrencePattern: task.recurrence_pattern || 'daily',
+      recurrenceStartDate: task.recurrence_start_date || '',
+      recurrenceEndDate: task.recurrence_end_date || undefined,
+      recurrenceDayOfWeek: task.recurrence_day_of_week ?? undefined,
+    });
+    setEditingTask(task);
+    setShowDetailModal(false);
+    setShowCreateModal(true);
+  };
+
+  const handleSaveOwnTask = async () => {
+    if (!editingTask) return;
+    const recurring = newTask.isRecurring;
+    const next: Record<string, unknown> = {
+      title: newTask.title.trim(),
+      description: newTask.description.trim() || null,
+      priority: newTask.priority,
+      due_date: newTask.due_date || null,
+      is_recurring: recurring,
+      recurrence_pattern: recurring ? newTask.recurrencePattern : null,
+      recurrence_start_date: recurring ? newTask.recurrenceStartDate || new Date().toISOString().split('T')[0] : null,
+      recurrence_end_date: recurring ? newTask.recurrenceEndDate || null : null,
+      recurrence_day_of_week: recurring && newTask.recurrencePattern === 'weekly' ? newTask.recurrenceDayOfWeek ?? null : null,
+    };
+    // Send only what actually changed, so an untouched form doesn't mark the task as edited
+    const blank = (v: unknown) => v === null || v === undefined || v === '';
+    const same = (key: string, a: unknown, b: unknown) =>
+      key === 'is_recurring' ? !!a === !!b : a === b || (blank(a) && blank(b));
+    const original = editingTask as unknown as Record<string, unknown>;
+    const changes = Object.fromEntries(Object.entries(next).filter(([k, v]) => !same(k, v, original[k])));
+    if (Object.keys(changes).length > 0) {
+      await apiUpdateTask(editingTask.id, changes);
+    }
   };
 
   const handleCreateTask = async (e: React.FormEvent) => {
@@ -420,6 +470,12 @@ function EmployeeDashboardInner() {
 
     setCreateLoading(true);
     try {
+      if (editingTask) {
+        await handleSaveOwnTask();
+        closeCreateModal();
+        await fetchTasks(true);
+        return;
+      }
       await apiCreateTask({
         title: newTask.title.trim(),
         description: newTask.description.trim() || null,
@@ -439,7 +495,7 @@ function EmployeeDashboardInner() {
       closeCreateModal();
       await fetchTasks(true);
     } catch (err) {
-      alert('Failed to add task: ' + (err as Error).message);
+      alert((editingTask ? 'Failed to save changes: ' : 'Failed to add task: ') + (err as Error).message);
     } finally {
       setCreateLoading(false);
     }
@@ -681,6 +737,7 @@ function EmployeeDashboardInner() {
                                   {task.recurrence_pattern || 'daily'}
                                 </span>
                               )}
+                              <EditedBadge task={task} viewerId={profile?.id} inverse={task.priority === 'bombe' && task.status !== 'done'} />
                             </p>
                             <p className={`text-xs ${task.priority === 'bombe' && task.status !== 'done' ? 'text-white font-bold' : 'text-[var(--foreground-tertiary)]'}`}>
                               Created: {format(gmt(task.created_at), 'MMM d, yyyy')}
@@ -716,7 +773,18 @@ function EmployeeDashboardInner() {
                             </span>
                           </td>
                           <td className="px-4 py-3 w-[16%]">
-                            <div className="flex items-center justify-center">
+                            <div className="flex items-center justify-center gap-2">
+                              {isOwnTask(task) && (
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  title="Edit task"
+                                  onClick={(e) => { e.stopPropagation(); openEditOwnTask(task); }}
+                                  className={`p-2 ${task.priority === 'bombe' && task.status !== 'done' ? 'text-white hover:bg-white/20!' : ''}`}
+                                >
+                                  <Pencil className="w-4 h-4" />
+                                </Button>
+                              )}
                               {task.created_by === profile?.id && (
                                 <Button
                                   variant="danger"
@@ -769,6 +837,7 @@ function EmployeeDashboardInner() {
                               <Repeat className="w-3 h-3" />
                             </span>
                           )}
+                          <EditedBadge task={task} viewerId={profile?.id} compact inverse={task.priority === 'bombe' && task.status !== 'done'} />
                         </p>
                         <p className={`text-xs ${task.priority === 'bombe' && task.status !== 'done' ? 'text-white font-bold' : 'text-[var(--foreground-tertiary)]'}`}>
                           {format(gmt(task.created_at), 'MMM d, yyyy')} • {differenceInDays(now(), new Date(task.created_at))} days ago
@@ -777,6 +846,17 @@ function EmployeeDashboardInner() {
                       <div className="flex items-center gap-1.5 shrink-0">
                         {task.priority === 'bombe' && task.status !== 'done' && (
                           <span className="text-xs font-bold text-white animate-pulse">🚨</span>
+                        )}
+                        {isOwnTask(task) && (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            title="Edit task"
+                            onClick={(e) => { e.stopPropagation(); openEditOwnTask(task); }}
+                            className={`p-1.5 ${task.priority === 'bombe' && task.status !== 'done' ? 'text-white hover:bg-white/20!' : ''}`}
+                          >
+                            <Pencil className="w-4 h-4" />
+                          </Button>
                         )}
                         {task.created_by === profile?.id && (
                           <Button
@@ -826,8 +906,13 @@ function EmployeeDashboardInner() {
       </main>
 
       {/* Add Task Modal */}
-      <Modal isOpen={showCreateModal} onClose={closeCreateModal} title="Add a Task for Yourself">
+      <Modal isOpen={showCreateModal} onClose={closeCreateModal} title={editingTask ? 'Edit Your Task' : 'Add a Task for Yourself'}>
         <form onSubmit={handleCreateTask} className="space-y-4">
+          {editingTask && (
+            <p className="px-3 py-2 rounded-lg bg-amber-50 border border-amber-200 text-sm text-amber-800">
+              Your manager will be notified and the task will be marked as edited.
+            </p>
+          )}
           <Input
             label="Title"
             placeholder="What do you need to do?"
@@ -877,7 +962,7 @@ function EmployeeDashboardInner() {
               Cancel
             </Button>
             <Button type="submit" loading={createLoading} disabled={!newTask.title.trim()}>
-              Add Task
+              {editingTask ? 'Save Changes' : 'Add Task'}
             </Button>
           </div>
         </form>
@@ -901,6 +986,8 @@ function EmployeeDashboardInner() {
                 <p className="mt-2 text-[var(--foreground-secondary)]">{selectedTask.description}</p>
               )}
             </div>
+
+            <EditedNote task={selectedTask} viewerId={profile?.id} />
 
             <div className="grid grid-cols-2 gap-4 py-4 border-y border-[var(--border)]">
               <div>
@@ -951,7 +1038,13 @@ function EmployeeDashboardInner() {
             </div>
 
             {selectedTask.created_by === profile?.id && (
-              <div className="flex justify-end">
+              <div className="flex justify-end gap-2">
+                {isOwnTask(selectedTask) && (
+                  <Button variant="ghost" size="sm" onClick={() => openEditOwnTask(selectedTask)}>
+                    <Pencil className="w-4 h-4" />
+                    Edit task
+                  </Button>
+                )}
                 <Button variant="ghost" size="sm" className="text-[var(--danger)]" onClick={() => handleDeleteOwnTask(selectedTask)}>
                   <Trash2 className="w-4 h-4" />
                   Delete task

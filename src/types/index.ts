@@ -37,6 +37,9 @@ export interface Task {
   recurrence_end_date?: string;
   parent_task_id?: string;
   recurrence_day_of_week?: number; // 0=Sunday, 6=Saturday
+  // Set when an employee edits a task they added themselves
+  edited_at?: string | null;
+  edited_by?: string | null;
 }
 
 export interface Comment {

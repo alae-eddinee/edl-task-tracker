@@ -9,3 +9,4 @@ export { TaskToastNotifications } from './TaskToastNotifications';
 export { BlueDotIndicator, BlueDotBadge } from './BlueDotIndicator';
 export { DatePicker } from './DatePicker';
 export { StatusSelect, StatusPill } from './StatusSelect';
+export { EditedBadge, EditedNote } from './EditedBadge';

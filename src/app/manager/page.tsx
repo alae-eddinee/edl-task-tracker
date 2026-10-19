@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
 import { useAuth, useTaskNotifications, useNotifications, notificationToToast } from '@/hooks';
 import { Header, StatsCard, OnlineUsers, NotificationInbox, RecurringTasks } from '@/components/layout';
-import { Button, Input, Select, Textarea, Modal, Card, Badge, DatePicker, StatusSelect, StatusPill } from '@/components/ui';
+import { Button, Input, Select, Textarea, Modal, Card, Badge, DatePicker, StatusSelect, StatusPill, EditedBadge, EditedNote } from '@/components/ui';
 import { RecurringTaskSelector } from '@/components/ui/RecurringTaskSelector';
 import { formatRecurrencePattern, calculateNextOccurrence } from '@/lib/recurring-tasks';
 import { TaskNotificationProvider } from '@/hooks/useTaskNotifications';
@@ -1001,6 +1001,7 @@ function ManagerDashboardInner() {
                                       self-added
                                     </span>
                                   )}
+                                  <EditedBadge task={task} />
                                   {task.is_recurring && (
                                     <span className="inline-flex items-center ml-2 px-1.5 py-0.5 rounded text-xs font-medium bg-[var(--primary)]/10 text-[var(--primary)]">
                                       <Repeat className="w-3 h-3 mr-0.5" />
@@ -1076,6 +1077,7 @@ function ManagerDashboardInner() {
                               <UserPlus className="w-3 h-3" />
                             </span>
                           )}
+                          <EditedBadge task={task} compact />
                           {task.is_recurring && (
                             <span className="inline-flex items-center ml-1.5 px-1 py-0.5 rounded text-xs font-medium bg-[var(--primary)]/10 text-[var(--primary)]">
                               <Repeat className="w-3 h-3" />
@@ -1208,6 +1210,7 @@ function ManagerDashboardInner() {
                                         <UserPlus className="w-3 h-3" />
                                       </span>
                                     )}
+                                    <EditedBadge task={task} compact />
                                     {task.is_recurring && (
                                       <span className="inline-flex items-center ml-1 text-[var(--primary)]" title={`Recurring ${task.recurrence_pattern || 'daily'}`}>
                                         <Repeat className="w-3 h-3" />
@@ -1507,6 +1510,7 @@ function ManagerDashboardInner() {
                 <p className="mt-2 text-[var(--foreground-secondary)]">{selectedTask.description}</p>
               )}
             </div>
+            <EditedNote task={selectedTask} viewerId={profile?.id} />
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <p className="text-sm text-[var(--foreground-tertiary)]">Assigned To</p>
