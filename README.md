@@ -26,7 +26,7 @@
 **Tasks**
 - Status: To Do / In Progress / Done, changed from a Notion-style pill menu.
 - 🚨 **BOMBE** priority: urgent tasks are highlighted and always sorted to the top.
-- **Recurring tasks** (daily, weekly on a chosen day, or monthly) that roll over automatically.
+- **Recurring tasks** (daily, weekly on a chosen day, or monthly) that roll over automatically, with their own *Recurring* tab that you can filter by frequency.
 - Due dates, overdue tracking, "days ago" counters, and a *self-added* tag on tasks employees create for themselves.
 
 **Real-time collaboration**
