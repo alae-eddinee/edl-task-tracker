@@ -40,6 +40,8 @@ export interface Task {
   // Set when an employee edits a task they added themselves
   edited_at?: string | null;
   edited_by?: string | null;
+  // Done flags of the task's checklist items (for the progress chip)
+  checklist?: { done: boolean }[];
 }
 
 export interface Comment {

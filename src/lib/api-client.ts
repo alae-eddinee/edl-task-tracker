@@ -80,10 +80,11 @@ interface ApiTask extends Record<string, unknown> {
   recurrence_day_of_week?: number;
   edited_at?: string | null;
   edited_by?: string | null;
+  checklist?: { done: boolean }[];
 }
 
 export async function apiGetTasks(): Promise<ApiTask[]> {
-  const res = await apiFetch('/tasks?select=id,title,description,priority,status,due_date,assigned_to,created_by,created_at,updated_at,is_recurring,recurrence_pattern,recurrence_start_date,recurrence_end_date,recurrence_day_of_week,parent_task_id,edited_at,edited_by,assigned_to_name:profiles!tasks_assigned_to_fkey(full_name),created_by_name:profiles!tasks_created_by_fkey(full_name)&order=priority.desc,created_at.desc');
+  const res = await apiFetch('/tasks?select=id,title,description,priority,status,due_date,assigned_to,created_by,created_at,updated_at,is_recurring,recurrence_pattern,recurrence_start_date,recurrence_end_date,recurrence_day_of_week,parent_task_id,edited_at,edited_by,checklist:task_checklist_items(done),assigned_to_name:profiles!tasks_assigned_to_fkey(full_name),created_by_name:profiles!tasks_created_by_fkey(full_name)&order=priority.desc,created_at.desc');
   if (!res.ok) throw new Error(`HTTP ${res.status}`);
   return res.json();
 }
@@ -158,6 +159,43 @@ export async function apiDeleteComment(id: string) {
   return res.status === 204 ? null : await res.json().catch(() => null);
 }
 
+export interface ApiChecklistItem {
+  id: string;
+  task_id: string;
+  content: string;
+  done: boolean;
+  position: number;
+  created_at: string;
+  done_at?: string | null;
+}
+
+export async function apiGetChecklist(taskId: string): Promise<ApiChecklistItem[]> {
+  const res = await apiFetch(`/task_checklist_items?select=id,task_id,content,done,position,created_at,done_at&task_id=eq.${taskId}&order=position.asc,created_at.asc`);
+  if (!res.ok) throw new Error(`HTTP ${res.status}: ${await res.text()}`);
+  return res.json();
+}
+
+export async function apiAddChecklistItem(data: { task_id: string; content: string; position: number }): Promise<ApiChecklistItem> {
+  const res = await apiFetch('/task_checklist_items', {
+    method: 'POST',
+    body: JSON.stringify(data),
+    headers: { 'Prefer': 'return=representation' },
+  });
+  if (!res.ok) throw new Error(`HTTP ${res.status}: ${await res.text()}`);
+  const [row] = await res.json();
+  return row;
+}
+
+export async function apiUpdateChecklistItem(id: string, data: { content?: string; done?: boolean; position?: number }) {
+  const res = await apiFetch(`/task_checklist_items?id=eq.${id}`, { method: 'PATCH', body: JSON.stringify(data) });
+  if (!res.ok) throw new Error(`HTTP ${res.status}: ${await res.text()}`);
+}
+
+export async function apiDeleteChecklistItem(id: string) {
+  const res = await apiFetch(`/task_checklist_items?id=eq.${id}`, { method: 'DELETE' });
+  if (!res.ok) throw new Error(`HTTP ${res.status}: ${await res.text()}`);
+}
+
 export async function apiGetNotifications(userId: string, limit = 100) {
   const res = await apiFetch(`/notifications?select=*&user_id=eq.${userId}&order=created_at.desc&limit=${limit}`);
   if (!res.ok) throw new Error(`HTTP ${res.status}`);
@@ -175,7 +213,7 @@ export async function apiSetNotificationsRead(userId: string, read: boolean, ids
 }
 
 export async function apiGetTasksByParentId(parentTaskId: string): Promise<ApiTask[]> {
-  const res = await apiFetch(`/tasks?select=id,title,description,priority,status,due_date,assigned_to,created_by,created_at,updated_at,is_recurring,recurrence_pattern,recurrence_start_date,recurrence_end_date,recurrence_day_of_week,parent_task_id,edited_at,edited_by,assigned_to_name:profiles!tasks_assigned_to_fkey(full_name),created_by_name:profiles!tasks_created_by_fkey(full_name)&parent_task_id=eq.${parentTaskId}&order=due_date.desc`);
+  const res = await apiFetch(`/tasks?select=id,title,description,priority,status,due_date,assigned_to,created_by,created_at,updated_at,is_recurring,recurrence_pattern,recurrence_start_date,recurrence_end_date,recurrence_day_of_week,parent_task_id,edited_at,edited_by,checklist:task_checklist_items(done),assigned_to_name:profiles!tasks_assigned_to_fkey(full_name),created_by_name:profiles!tasks_created_by_fkey(full_name)&parent_task_id=eq.${parentTaskId}&order=due_date.desc`);
   if (!res.ok) throw new Error(`HTTP ${res.status}`);
   return res.json();
 }

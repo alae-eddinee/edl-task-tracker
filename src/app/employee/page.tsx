@@ -4,7 +4,7 @@ import { useEffect, useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
 import { useAuth, useTaskNotifications, useNotifications, notificationToToast } from '@/hooks';
-import { Header, StatsCard, NotificationInbox, RecurringTasks } from '@/components/layout';
+import { Header, StatsCard, NotificationInbox, RecurringTasks, TaskChecklist, ChecklistChip } from '@/components/layout';
 import { Button, Card, Modal, Textarea, Input, DatePicker, StatusSelect, EditedBadge, EditedNote } from '@/components/ui';
 import { TaskNotificationProvider } from '@/hooks/useTaskNotifications';
 import { TaskToastNotifications } from '@/components/ui/TaskToastNotifications';
@@ -384,6 +384,11 @@ function EmployeeDashboardInner() {
     };
   }, [profile, selectedTaskId, fetchComments]);
 
+  // Keeps the checklist progress chips in the lists in step with the open task
+  const handleChecklistProgress = useCallback((taskId: string, items: { done: boolean }[]) => {
+    setTasks((prev) => prev.map((t) => (t.id === taskId ? { ...t, checklist: items } : t)));
+  }, []);
+
   const openDetailModal = (task: Task) => {
     inbox.markTaskAsRead(task.id);
     setSelectedTask(task);
@@ -738,6 +743,7 @@ function EmployeeDashboardInner() {
                                 </span>
                               )}
                               <EditedBadge task={task} viewerId={profile?.id} inverse={task.priority === 'bombe' && task.status !== 'done'} />
+                              <ChecklistChip items={task.checklist} inverse={task.priority === 'bombe' && task.status !== 'done'} />
                             </p>
                             <p className={`text-xs ${task.priority === 'bombe' && task.status !== 'done' ? 'text-white font-bold' : 'text-[var(--foreground-tertiary)]'}`}>
                               Created: {format(gmt(task.created_at), 'MMM d, yyyy')}
@@ -838,6 +844,7 @@ function EmployeeDashboardInner() {
                             </span>
                           )}
                           <EditedBadge task={task} viewerId={profile?.id} compact inverse={task.priority === 'bombe' && task.status !== 'done'} />
+                          <ChecklistChip items={task.checklist} inverse={task.priority === 'bombe' && task.status !== 'done'} />
                         </p>
                         <p className={`text-xs ${task.priority === 'bombe' && task.status !== 'done' ? 'text-white font-bold' : 'text-[var(--foreground-tertiary)]'}`}>
                           {format(gmt(task.created_at), 'MMM d, yyyy')} • {differenceInDays(now(), new Date(task.created_at))} days ago
@@ -1051,6 +1058,8 @@ function EmployeeDashboardInner() {
                 </Button>
               </div>
             )}
+
+            <TaskChecklist taskId={selectedTask.id} canEdit={selectedTask.assigned_to === profile?.id} onProgress={handleChecklistProgress} />
 
             {/* Comments Section */}
             <div>

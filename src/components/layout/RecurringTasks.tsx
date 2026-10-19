@@ -5,6 +5,7 @@ import { Pencil, Repeat, Trash2 } from 'lucide-react';
 import { format, startOfDay } from 'date-fns';
 import { Button, Card, EditedBadge, StatusPill, StatusSelect } from '@/components/ui';
 import { formatRecurrencePattern } from '@/lib/recurring-tasks';
+import { ChecklistChip } from './TaskChecklist';
 import { gmt, now } from '@/lib/time';
 import type { RecurrencePattern, Task, TaskStatus } from '@/types';
 
@@ -160,7 +161,7 @@ export function RecurringTasks({ tasks, onOpen, showAssignee, onStatusChange, mu
                     }`}
                   >
                     <td className="px-4 py-3">
-                      <p className={`font-medium ${titleClass(task)}`}>{task.title}<EditedBadge task={task} /></p>
+                      <p className={`font-medium ${titleClass(task)}`}>{task.title}<EditedBadge task={task} /><ChecklistChip items={task.checklist} /></p>
                       {task.recurrence_end_date && (
                         <p className="text-xs text-[var(--foreground-tertiary)]">Until {format(gmt(task.recurrence_end_date), 'MMM d, yyyy')}</p>
                       )}
@@ -188,7 +189,7 @@ export function RecurringTasks({ tasks, onOpen, showAssignee, onStatusChange, mu
               >
                 <div className="flex items-start justify-between gap-2 mb-2">
                   <div className="min-w-0">
-                    <p className={`font-medium text-sm leading-tight ${titleClass(task)}`}>{task.title}<EditedBadge task={task} compact /></p>
+                    <p className={`font-medium text-sm leading-tight ${titleClass(task)}`}>{task.title}<EditedBadge task={task} compact /><ChecklistChip items={task.checklist} /></p>
                     {showAssignee && <p className={`text-xs ${struck(task) || 'text-[var(--foreground-tertiary)]'}`}>{task.assigned_to_name || 'Unknown'}</p>}
                   </div>
                   {actions(task, true)}
