@@ -4,7 +4,7 @@ import { useEffect, useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
 import { useAuth, useTaskNotifications, useNotifications, notificationToToast } from '@/hooks';
-import { Header, StatsCard, OnlineUsers, NotificationInbox } from '@/components/layout';
+import { Header, StatsCard, OnlineUsers, NotificationInbox, RecurringTasks } from '@/components/layout';
 import { Button, Input, Select, Textarea, Modal, Card, Badge, DatePicker, StatusSelect, StatusPill } from '@/components/ui';
 import { RecurringTaskSelector } from '@/components/ui/RecurringTaskSelector';
 import { formatRecurrencePattern, calculateNextOccurrence } from '@/lib/recurring-tasks';
@@ -64,7 +64,7 @@ function ManagerDashboardInner() {
     fetchData(true);
     if (n.task_id && n.task_id === selectedTask?.id) fetchComments(n.task_id);
   });
-  const [activeTab, setActiveTab] = useState<'tasks' | 'inbox'>('tasks');
+  const [activeTab, setActiveTab] = useState<'tasks' | 'recurring' | 'inbox'>('tasks');
   const router = useRouter();
   const [tasks, setTasks] = useState<Task[]>([]);
   const [employees, setEmployees] = useState<Profile[]>([]);
@@ -766,6 +766,7 @@ function ManagerDashboardInner() {
   });
 
   const stats = getStats();
+  const recurringCount = tasks.filter(t => t.is_recurring).length;
 
   if (authLoading || loading) {
     return (
@@ -797,6 +798,7 @@ function ManagerDashboardInner() {
         <div className="mb-6 flex gap-1 border-b border-[var(--border)]">
           {([
             { key: 'tasks', label: 'Tasks', icon: <ClipboardList className="w-4 h-4" /> },
+            { key: 'recurring', label: 'Recurring', icon: <Repeat className="w-4 h-4" /> },
             { key: 'inbox', label: 'Inbox', icon: <Bell className="w-4 h-4" /> },
           ] as const).map((tab) => (
             <button
@@ -810,6 +812,11 @@ function ManagerDashboardInner() {
             >
               {tab.icon}
               {tab.label}
+              {tab.key === 'recurring' && recurringCount > 0 && (
+                <span className="min-w-[20px] px-1.5 py-0.5 rounded-full bg-[var(--border)] text-[var(--foreground-secondary)] text-xs font-bold">
+                  {recurringCount}
+                </span>
+              )}
               {tab.key === 'inbox' && inbox.unreadCount > 0 && (
                 <span className="min-w-[20px] px-1.5 py-0.5 rounded-full bg-[var(--danger)] text-white text-xs font-bold">
                   {inbox.unreadCount}
@@ -827,6 +834,14 @@ function ManagerDashboardInner() {
             onMarkRead={inbox.markAsRead}
             onMarkUnread={inbox.markAsUnread}
             onMarkAllRead={inbox.markAllAsRead}
+          />
+        ) : activeTab === 'recurring' ? (
+          <RecurringTasks
+            tasks={tasks}
+            showAssignee
+            onOpen={openDetailModal}
+            onEdit={openEditModal}
+            onDelete={handleDeleteTask}
           />
         ) : (
         <>
