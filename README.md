@@ -21,7 +21,7 @@
 **Role-based dashboards**
 - **Admin**: create and edit users, assign roles, reset passwords (which also signs the user out everywhere), and see who is online.
 - **Manager**: create, edit and delete tasks, assign them to employees, and follow every employee's workload in the *Employee tracking* view.
-- **Employee**: see assigned tasks, change their status, comment, and add tasks for themselves.
+- **Employee**: see assigned tasks, change their status, comment, and add tasks for themselves. They can fix their own tasks later: every edit is marked as *edited* and the managers are told exactly what changed.
 
 **Tasks**
 - Status: To Do / In Progress / Done, changed from a Notion-style pill menu.
